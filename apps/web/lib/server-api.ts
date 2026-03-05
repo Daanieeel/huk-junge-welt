@@ -30,3 +30,12 @@ export async function getServerDashboard(): Promise<Dashboard | null> {
     return null;
   }
 }
+
+export async function getServerQuestionnaire(): Promise<{ id: string } | null> {
+  try {
+    const response = await serverRequest<{ data: { id: string } | null }>("/questionnaire");
+    return response.data ?? null;
+  } catch {
+    return null;
+  }
+}

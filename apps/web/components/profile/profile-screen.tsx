@@ -1,0 +1,104 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { LogOut, RefreshCw, User } from "lucide-react";
+import { signOut } from "@/lib/auth-client";
+import { useBedarfscheckStore } from "@/lib/bedarfscheck-store";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+
+interface ProfileScreenProps {
+  user: { name: string | null; email: string };
+}
+
+export function ProfileScreen({ user }: ProfileScreenProps) {
+  const router = useRouter();
+  const reset = useBedarfscheckStore((s) => s.reset);
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/sign-in");
+    router.refresh();
+  }
+
+  function handleResetBedarfscheck() {
+    reset();
+    router.push("/bedarfscheck");
+  }
+
+  return (
+    <div className="pb-10">
+      {/* User info */}
+      <div className="px-5 pt-4 pb-5">
+        <h2 className="text-[24px] font-bold text-foreground leading-tight mb-0.5">Profil</h2>
+        <p className="text-[13px] text-muted-foreground">Einstellungen und Konto</p>
+      </div>
+
+      <div className="px-4 flex flex-col gap-4">
+        {/* Account card */}
+        <section>
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
+            Konto
+          </p>
+          <div className="bg-card rounded-2xl ring-1 ring-foreground/8 divide-y divide-border">
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <div className="size-9 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <User className="size-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-semibold text-foreground truncate">
+                  {user.name ?? "–"}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Appearance */}
+        <section>
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
+            Darstellung
+          </p>
+          <div className="bg-card rounded-2xl ring-1 ring-foreground/8 px-4 py-3.5">
+            <p className="text-[13px] font-medium text-foreground mb-2.5">Farbschema</p>
+            <ThemeSwitcher />
+          </div>
+        </section>
+
+        {/* Settings */}
+        <section>
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
+            Einstellungen
+          </p>
+          <div className="bg-card rounded-2xl ring-1 ring-foreground/8 divide-y divide-border">
+            <button
+              onClick={handleResetBedarfscheck}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
+            >
+              <RefreshCw className="size-4 text-muted-foreground shrink-0" />
+              <div>
+                <p className="text-[13px] font-medium text-foreground">Bedarfscheck zurücksetzen</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Fragebogen erneut ausfüllen
+                </p>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        {/* Sign out */}
+        <section>
+          <div className="bg-card rounded-2xl ring-1 ring-foreground/8">
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
+            >
+              <LogOut className="size-4 text-destructive shrink-0" />
+              <p className="text-[13px] font-medium text-destructive">Abmelden</p>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

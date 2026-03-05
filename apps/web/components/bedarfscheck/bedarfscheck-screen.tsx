@@ -5,7 +5,7 @@ import {
   TOTAL_STEPS,
   type BedarfscheckStep,
 } from "@/lib/bedarfscheck-store";
-import { useSubmitQuestionnaire } from "@/lib/queries";
+import { useSubmitQuestionnaire, usePutQuestionnaire } from "@/lib/queries";
 import { StepIndicator } from "./step-indicator";
 import { IntroScreen } from "./intro-screen";
 import { StepPersonal } from "./step-personal";
@@ -22,9 +22,10 @@ import { CompletionScreen } from "./completion-screen";
 
 interface BedarfscheckScreenProps {
   userName: string | null;
+  hasExistingQuestionnaire?: boolean;
 }
 
-export function BedarfscheckScreen({ userName }: BedarfscheckScreenProps) {
+export function BedarfscheckScreen({ userName, hasExistingQuestionnaire = false }: BedarfscheckScreenProps) {
   const {
     step,
     completedSteps,
@@ -35,7 +36,9 @@ export function BedarfscheckScreen({ userName }: BedarfscheckScreenProps) {
     goToPrevStep,
   } = useBedarfscheckStore();
 
-  const submitMutation = useSubmitQuestionnaire();
+  const postMutation = useSubmitQuestionnaire();
+  const putMutation = usePutQuestionnaire();
+  const submitMutation = hasExistingQuestionnaire ? putMutation : postMutation;
 
   const goToStep = (s: BedarfscheckStep) => setStep(s);
   const DONE_STEP = (TOTAL_STEPS + 1) as BedarfscheckStep;

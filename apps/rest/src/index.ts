@@ -620,6 +620,64 @@ const app = new Elysia()
           detail: { tags: ["Questionnaire"], summary: "Create or update questionnaire" },
         }
       )
+      .put(
+        "/",
+        async ({ user, body, set }) => {
+          const existing = await prisma.questionnaire.findUnique({
+            where: { userId: user.id },
+            select: { id: true },
+          });
+          if (!existing) {
+            set.status = 404;
+            return { error: "Questionnaire not found" };
+          }
+          const fields = {
+            name: body.name,
+            dateOfBirth: new Date(body.dateOfBirth),
+            jobType: body.jobType as JobType,
+            jobExpiryDate: body.jobExpiryDate ? new Date(body.jobExpiryDate) : null,
+            salary: body.salary != null ? body.salary : null,
+            vehicleTypes: body.vehicleTypes as VehicleType[],
+            streetName: body.streetName ?? null,
+            streetNumber: body.streetNumber ?? null,
+            zipcode: body.zipcode ?? null,
+            city: body.city ?? null,
+            housingType: body.housingType ? (body.housingType as HousingType) : null,
+            housingOwnershipType: body.housingOwnershipType
+              ? (body.housingOwnershipType as HousingOwnershipType)
+              : null,
+            relationshipStatus: body.relationshipStatus as RelationshipStatus,
+            childrenCount: body.childrenCount,
+            goal: body.goal ? (body.goal as GoalType) : null,
+          };
+          const questionnaire = await prisma.questionnaire.update({
+            where: { userId: user.id },
+            data: fields,
+          });
+          return { data: questionnaire };
+        },
+        {
+          auth: true,
+          body: t.Object({
+            name: t.String({ minLength: 1 }),
+            dateOfBirth: t.String(),
+            jobType: t.String(),
+            jobExpiryDate: t.Optional(t.Nullable(t.String())),
+            salary: t.Optional(t.Nullable(t.Number({ minimum: 0 }))),
+            vehicleTypes: t.Array(t.String()),
+            streetName: t.Optional(t.Nullable(t.String())),
+            streetNumber: t.Optional(t.Nullable(t.String())),
+            zipcode: t.Optional(t.Nullable(t.String())),
+            city: t.Optional(t.Nullable(t.String())),
+            housingType: t.Optional(t.Nullable(t.String())),
+            housingOwnershipType: t.Optional(t.Nullable(t.String())),
+            relationshipStatus: t.String(),
+            childrenCount: t.Number({ minimum: 0 }),
+            goal: t.Optional(t.Nullable(t.String())),
+          }),
+          detail: { tags: ["Questionnaire"], summary: "Overwrite existing questionnaire" },
+        }
+      )
   )
 
   // ============================================================================

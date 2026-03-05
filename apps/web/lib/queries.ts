@@ -30,13 +30,18 @@ export function useQuestionnaireQuery() {
 }
 
 // ============================================================================
-// Infer the questionnaire POST body type directly from the Eden treaty client
-// so it stays in sync with the Elysia endpoint at compile time.
+// Infer the questionnaire body types directly from the Eden treaty client
+// so they stay in sync with the Elysia endpoints at compile time.
 // ============================================================================
 
-type QuestionnairePostBody = Parameters<
-  typeof api.questionnaire.post
->[0];
+type QuestionnairePostBody = Parameters<typeof api.questionnaire.post>[0];
+type QuestionnairePutBody = Parameters<typeof api.questionnaire.put>[0];
+
+function invalidateQuestionnaireQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.questionnaire });
+  queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+  queryClient.invalidateQueries({ queryKey: queryKeys.home });
+}
 
 export function useSubmitQuestionnaire() {
   const queryClient = useQueryClient();
@@ -54,10 +59,26 @@ export function useSubmitQuestionnaire() {
       }
       return data!;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.questionnaire });
-      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
-      queryClient.invalidateQueries({ queryKey: queryKeys.home });
+    onSuccess: () => invalidateQuestionnaireQueries(queryClient),
+  });
+}
+
+export function usePutQuestionnaire() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: QuestionnairePutBody) => {
+      const { data, error } = await api.questionnaire.put(input);
+      if (error) {
+        const msg =
+          typeof error.value === "object" &&
+          error.value !== null &&
+          "error" in error.value
+            ? String((error.value as { error: unknown }).error)
+            : "Unbekannter Fehler";
+        throw new Error(msg);
+      }
+      return data!;
     },
+    onSuccess: () => invalidateQuestionnaireQueries(queryClient),
   });
 }

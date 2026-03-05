@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de" className={inter.variable}>
-      <body className="antialiased bg-gray-100 overflow-x-hidden">
-        <div className="min-h-svh w-full max-w-[430px] mx-auto bg-white overflow-hidden">
+    <html lang="de" className={inter.variable} suppressHydrationWarning>
+      <body className="antialiased bg-muted overflow-x-hidden">
+        <div className="min-h-svh w-full max-w-[430px] mx-auto bg-background overflow-hidden">
           <Providers>{children}</Providers>
         </div>
       </body>
