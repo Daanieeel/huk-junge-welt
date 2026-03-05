@@ -10,9 +10,7 @@ export const metadata: Metadata = {
   description: "Dein persönlicher Versicherungsüberblick",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="de" className={inter.variable}>
       <body className="antialiased bg-gray-100 overflow-x-hidden">

@@ -44,7 +44,7 @@ export function HomeScreen() {
   return (
     <>
       <div className="px-5 pt-1 pb-2 flex items-center flex-col">
-        <h2 className="text-[28px] font-bold text-foreground leading-tight">
+        <h2 className="text-[28px] font-extrabold text-foreground leading-tight">
           Hallo, {firstName}!
         </h2>
       </div>

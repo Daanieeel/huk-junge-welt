@@ -5,7 +5,7 @@ const HUK_LOGO =
 
 export function AppHeader() {
   return (
-    <header className="shrink-0 flex items-center justify-center gap-2.5 px-5 pt-5 pb-3">
+    <header className="shrink-0 flex items-center justify-center px-5 pt-5 pb-3">
       <Image
           src={HUK_LOGO}
           alt="HUK Logo"
@@ -13,7 +13,7 @@ export function AppHeader() {
           height={36}
           className="object-cover"
         />
-      <span className="text-[20px] font-black tracking-tight text-foreground leading-none">
+      <span className="text-xs font-black tracking-tight text-foreground leading-none">
         JUNGE WELT
       </span>
     </header>

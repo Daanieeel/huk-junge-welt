@@ -71,7 +71,7 @@ export function ScoreSection({
         </Button>
       )}
 
-      <p className="text-[11px] text-muted-foreground text-center mt-2.5 mb-6">
+      <p className="text-[11px] text-muted-foreground -mt-0.5 text-center mb-6">
         {hasQuestionnaire
           ? "Deine personalisierten Versicherungsempfehlungen"
           : "Persönliche Analyse in 5 Minuten"}

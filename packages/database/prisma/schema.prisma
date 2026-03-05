@@ -217,7 +217,7 @@ model Document {
 model Proposal {
   id            String          @id @default(cuid())
   type          InsuranceType
-  company       String          @default("Unsere Partner-Versicherung AG")
+  company       String          
   rate          Decimal         @db.Decimal(10, 2)
   interval      PaymentInterval @default(MONTHLY)
   templateId    String

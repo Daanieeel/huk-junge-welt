@@ -5,8 +5,8 @@ import { AppHeader } from "@/components/nav/app-header";
 export default function HomePage() {
   return (
     <MainShell>
-      <main><AppHeader />
-      <HomeScreen /></main>
+      <AppHeader />
+      <HomeScreen />
     </MainShell>
   );
 }
