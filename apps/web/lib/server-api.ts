@@ -1,31 +1,34 @@
 // Server-only API helpers for Next.js Server Components.
-// These functions call the REST API forwarding the incoming request's cookie header
-// so that authenticated routes work correctly from server-side code.
+// Uses Eden Treaty to call the REST API, forwarding the incoming request's
+// cookie header so that authenticated routes work correctly from server-side code.
 // Do NOT import this file in client components.
 
 import { headers } from "next/headers";
-import { clientEnv } from "@repo/env/client";
+import { treaty } from "@elysiajs/eden";
+import type { App } from "@app/rest";
 import type { Dashboard } from "./api-client";
 import { DashboardSchema } from "./api-client";
 
-async function serverRequest<T>(endpoint: string): Promise<T> {
+const REST_URL = process.env.NEXT_PUBLIC_REST_URL ?? "http://localhost:3001";
+
+/**
+ * Creates an Eden Treaty client that forwards the current request's cookies,
+ * enabling authenticated calls from Next.js Server Components.
+ */
+async function getServerApi() {
   const cookieHeader = (await headers()).get("cookie") ?? "";
-  const res = await fetch(`${clientEnv.NEXT_PUBLIC_REST_URL}${endpoint}`, {
-    headers: { cookie: cookieHeader, "Content-Type": "application/json" },
-    cache: "no-store",
+  return treaty<App>(REST_URL, {
+    headers: { cookie: cookieHeader },
+    fetch: { cache: "no-store" },
   });
-
-  if (!res.ok) {
-    throw new Error(`Server API error ${res.status} for ${endpoint}`);
-  }
-
-  return res.json() as Promise<T>;
 }
 
 export async function getServerDashboard(): Promise<Dashboard | null> {
   try {
-    const response = await serverRequest<{ data: unknown }>("/dashboard");
-    return DashboardSchema.parse(response.data);
+    const api = await getServerApi();
+    const { data, error } = await api.dashboard.get();
+    if (error || !data || !("data" in data)) return null;
+    return DashboardSchema.parse(data.data);
   } catch {
     return null;
   }
@@ -33,8 +36,10 @@ export async function getServerDashboard(): Promise<Dashboard | null> {
 
 export async function getServerQuestionnaire(): Promise<{ id: string } | null> {
   try {
-    const response = await serverRequest<{ data: { id: string } | null }>("/questionnaire");
-    return response.data ?? null;
+    const api = await getServerApi();
+    const { data, error } = await api.questionnaire.get();
+    if (error || !data || !("data" in data)) return null;
+    return data.data ?? null;
   } catch {
     return null;
   }

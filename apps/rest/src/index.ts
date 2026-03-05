@@ -5,12 +5,12 @@ import {
   prisma,
   JobStatus,
   InsuranceType,
-  JobType,
+  type JobType,
   VehicleType,
-  RelationshipStatus,
-  HousingType,
-  HousingOwnershipType,
-  GoalType,
+  type RelationshipStatus,
+  type HousingType,
+  type HousingOwnershipType,
+  type GoalType,
   type Insurance,
   type Proposal,
   type Questionnaire,
@@ -144,7 +144,8 @@ function computeInsuranceScore(insurances: Insurance[], items: CoverageItem[]): 
   const scored = insurances.filter((i: Insurance) => i.coverageScore !== null);
   const avgQuality =
     scored.length > 0
-      ? scored.reduce((sum: number, i: Insurance) => sum + (i.coverageScore ?? 70), 0) / scored.length
+      ? scored.reduce((sum: number, i: Insurance) => sum + (i.coverageScore ?? 70), 0) /
+        scored.length
       : 70;
 
   return Math.round(coverageRatio * 70 + (avgQuality / 100) * 30);
@@ -172,20 +173,18 @@ const jobProducer = createExternalApiJobProducer(env.BULLMQ_REDIS_URL);
 // are rejected with HTTP 401 before the route handler runs.
 // ============================================================================
 
-const betterAuthPlugin = new Elysia({ name: "better-auth" })
-  .mount(auth.handler)
-  .macro({
-    auth: {
-      async resolve({ status, request: { headers } }) {
-        const session = await auth.api.getSession({ headers });
-        if (!session) return status(401);
-        return {
-          user: session.user,
-          session: session.session,
-        };
-      },
+const betterAuthPlugin = new Elysia({ name: "better-auth" }).mount(auth.handler).macro({
+  auth: {
+    async resolve({ status, request: { headers } }) {
+      const session = await auth.api.getSession({ headers });
+      if (!session) return status(401);
+      return {
+        user: session.user,
+        session: session.session,
+      };
     },
-  });
+  },
+});
 
 // ============================================================================
 // Elysia App
@@ -234,21 +233,24 @@ const app = new Elysia()
   // ============================================================================
   .group("/users", (app) =>
     app
-      .get(
-        "/me",
-        async ({ user }) => ({ data: user }),
-        {
-          auth: true,
-          detail: { tags: ["Users"], summary: "Get current user profile" },
-        }
-      )
+      .get("/me", async ({ user }) => ({ data: user }), {
+        auth: true,
+        detail: { tags: ["Users"], summary: "Get current user profile" },
+      })
       .patch(
         "/me",
         async ({ user, body }) => {
           const updated = await prisma.user.update({
             where: { id: user.id },
             data: { name: body.name, image: body.image },
-            select: { id: true, email: true, name: true, image: true, createdAt: true, updatedAt: true },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              image: true,
+              createdAt: true,
+              updatedAt: true,
+            },
           });
           return { data: updated };
         },
@@ -531,8 +533,7 @@ const app = new Elysia()
         const score =
           coverageItems.length > 0
             ? Math.round(
-                coverageItems.reduce((sum, item) => sum + item.score, 0) /
-                  coverageItems.length
+                coverageItems.reduce((sum, item) => sum + item.score, 0) / coverageItems.length
               )
             : 0;
 
@@ -546,7 +547,10 @@ const app = new Elysia()
       },
       {
         auth: true,
-        detail: { tags: ["Home"], summary: "Get home screen data (AI score + coverage assessments)" },
+        detail: {
+          tags: ["Home"],
+          summary: "Get home screen data (AI score + coverage assessments)",
+        },
       }
     )
   )
@@ -692,6 +696,9 @@ process.on("SIGINT", async () => {
   console.log("\n🛑 Shutting down REST API...");
   await prisma.$disconnect();
   process.exit(0);
+});
+
+export type App = typeof app;
 });
 
 export type App = typeof app;
