@@ -69,6 +69,14 @@ enum GoalType {
   COMPREHENSIVE
 }
 
+enum CoverageStatus {
+  MISSING
+  WEAK
+  ADEQUATE
+  GOOD
+  EXCELLENT
+}
+
 enum JobStatus {
   PENDING
   PROCESSING
@@ -108,8 +116,9 @@ model User {
   questionnaire Questionnaire?
 
   // App relations (Old Schema)
-  jobs          Job[]
-  notifications Notification[]
+  jobs                Job[]
+  notifications       Notification[]
+  coverageAssessments CoverageAssessment[]
 
   @@map("users")
 }
@@ -258,6 +267,29 @@ model Questionnaire {
   user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("questionnaire")
+}
+
+// ============================================================================
+// COVERAGE ASSESSMENTS (AI-generated per insurance type, filled by worker)
+// ============================================================================
+
+model CoverageAssessment {
+  id        String         @id @default(cuid())
+  type      InsuranceType
+  status    CoverageStatus @default(MISSING)
+  score     Int            @default(0) // 0-100
+  priority  Int            @default(3) // 1=critical, 5=optional
+  notes     String?
+
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+
+  userId    String         @map("user_id")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("coverage_assessments")
 }
 
 // ============================================================================

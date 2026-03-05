@@ -1,5 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/client";
+// Import PrismaClient from generated/index which has all models (Insurance, Proposal, etc.)
+// generated/client.ts only has the original 7 models in Prisma v7's modular generation
+import { PrismaClient } from "../generated/index";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

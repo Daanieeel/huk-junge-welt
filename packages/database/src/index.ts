@@ -15,6 +15,25 @@ export {
   type Verification,
 } from "../generated/client";
 
+// Insurance-related enums and model types are only in generated/index
+// (Prisma v7 client.ts doesn't re-export these models)
+export {
+  InsuranceType,
+  CoverageStatus,
+  PaymentInterval,
+  RelationshipStatus,
+  VehicleType,
+  HousingType,
+  HousingOwnershipType,
+  JobType,
+  GoalType,
+  type Insurance,
+  type Proposal,
+  type Questionnaire,
+  type Document,
+  type CoverageAssessment,
+} from "../generated/index";
+
 // Input types for creating entities
 import type { Prisma } from "../generated/client";
 

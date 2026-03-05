@@ -228,3 +228,75 @@ export const syncApi = {
     return response.data;
   },
 };
+
+// ============================================================================
+// Dashboard API
+// ============================================================================
+
+export const InsuranceTypeLabels: Record<string, string> = {
+  PRIVATHAFTPFLICHT: "Privathaftpflicht",
+  HAUSRAT: "Hausrat",
+  KFZ: "Kfz-Versicherung",
+  BERUFSUNFAEHIGKEIT: "Berufsunfähigkeit",
+  ZAHNZUSATZ: "Zahnzusatz",
+  PFLEGE: "Pflegeversicherung",
+  UNFALL: "Unfallversicherung",
+  RECHTSSCHUTZ: "Rechtsschutz",
+  KRANKENZUSATZ: "Krankenzusatz",
+};
+
+export const InsuranceTypeIcons: Record<string, string> = {
+  PRIVATHAFTPFLICHT: "🛡️",
+  HAUSRAT: "🏠",
+  KFZ: "🚗",
+  BERUFSUNFAEHIGKEIT: "💼",
+  ZAHNZUSATZ: "🦷",
+  PFLEGE: "🏥",
+  UNFALL: "⚡",
+  RECHTSSCHUTZ: "⚖️",
+  KRANKENZUSATZ: "💊",
+};
+
+export const CoverageItemSchema = z.object({
+  type: z.string(),
+  status: z.enum(["covered", "recommended", "not_covered"]),
+  coverageScore: z.number().nullable(),
+  insurance: z
+    .object({
+      id: z.string(),
+      company: z.string(),
+      rate: z.string(),
+      interval: z.string(),
+    })
+    .nullable(),
+  proposal: z
+    .object({
+      id: z.string(),
+      company: z.string(),
+      rate: z.string(),
+      interval: z.string(),
+      priority: z.number().nullable(),
+      reason: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+export type CoverageItem = z.infer<typeof CoverageItemSchema>;
+
+export const DashboardSchema = z.object({
+  score: z.number(),
+  scoreLabel: z.string(),
+  totalRecommended: z.number(),
+  totalCovered: z.number(),
+  hasQuestionnaire: z.boolean(),
+  items: z.array(CoverageItemSchema),
+});
+
+export type Dashboard = z.infer<typeof DashboardSchema>;
+
+export const dashboardApi = {
+  get: async (): Promise<Dashboard> => {
+    const response = await request<{ data: unknown }>("/dashboard");
+    return DashboardSchema.parse(response.data);
+  },
+};
