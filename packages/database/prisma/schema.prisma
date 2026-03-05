@@ -239,26 +239,26 @@ model Questionnaire {
   name                 String
   dateOfBirth          DateTime              @db.Date
   
-  // Adresse
-  streetName           String
-  streetNumber         String
-  zipcode              String
-  city                 String
-  
+  // Adresse (optional – collected in a later flow)
+  streetName           String?
+  streetNumber         String?
+  zipcode              String?
+  city                 String?
+
   // Beruf & Finanzen
   jobType              JobType
   jobExpiryDate        DateTime?             @db.Date
-  salary               Decimal               @db.Decimal(10, 2)
-  
+  salary               Decimal?              @db.Decimal(10, 2)
+
   // Lebenssituation
   relationshipStatus   RelationshipStatus
   childrenCount        Int                   @default(0)
-  
+
   // Besitztümer & Wohnen
   vehicleTypes         VehicleType[]
-  housingType          HousingType
+  housingType          HousingType?
   housingOwnershipType HousingOwnershipType?
-  goal                 GoalType
+  goal                 GoalType?
 
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt

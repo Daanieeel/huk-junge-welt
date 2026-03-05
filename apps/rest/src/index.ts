@@ -5,7 +5,12 @@ import {
   prisma,
   JobStatus,
   InsuranceType,
+  JobType,
   VehicleType,
+  RelationshipStatus,
+  HousingType,
+  HousingOwnershipType,
+  GoalType,
   type Insurance,
   type Proposal,
   type Questionnaire,
@@ -543,6 +548,77 @@ const app = new Elysia()
         detail: { tags: ["Home"], summary: "Get home screen data (AI score + coverage assessments)" },
       }
     )
+  )
+
+  // ============================================================================
+  // Questionnaire Routes (authenticated)
+  // ============================================================================
+  .group("/questionnaire", (app) =>
+    app
+      .get(
+        "/",
+        async ({ user }) => {
+          const questionnaire = await prisma.questionnaire.findUnique({
+            where: { userId: user.id },
+          });
+          return { data: questionnaire };
+        },
+        {
+          auth: true,
+          detail: { tags: ["Questionnaire"], summary: "Get questionnaire for current user" },
+        }
+      )
+      .post(
+        "/",
+        async ({ user, body }) => {
+          const fields = {
+            name: body.name,
+            dateOfBirth: new Date(body.dateOfBirth),
+            jobType: body.jobType as JobType,
+            jobExpiryDate: body.jobExpiryDate ? new Date(body.jobExpiryDate) : null,
+            salary: body.salary != null ? body.salary : null,
+            vehicleTypes: body.vehicleTypes as VehicleType[],
+            streetName: body.streetName ?? null,
+            streetNumber: body.streetNumber ?? null,
+            zipcode: body.zipcode ?? null,
+            city: body.city ?? null,
+            housingType: body.housingType ? (body.housingType as HousingType) : null,
+            housingOwnershipType: body.housingOwnershipType
+              ? (body.housingOwnershipType as HousingOwnershipType)
+              : null,
+            relationshipStatus: body.relationshipStatus as RelationshipStatus,
+            childrenCount: body.childrenCount,
+            goal: body.goal ? (body.goal as GoalType) : null,
+          };
+          const questionnaire = await prisma.questionnaire.upsert({
+            where: { userId: user.id },
+            create: { userId: user.id, ...fields },
+            update: fields,
+          });
+          return { data: questionnaire };
+        },
+        {
+          auth: true,
+          body: t.Object({
+            name: t.String({ minLength: 1 }),
+            dateOfBirth: t.String(),
+            jobType: t.String(),
+            jobExpiryDate: t.Optional(t.Nullable(t.String())),
+            salary: t.Optional(t.Nullable(t.Number({ minimum: 0 }))),
+            vehicleTypes: t.Array(t.String()),
+            streetName: t.Optional(t.Nullable(t.String())),
+            streetNumber: t.Optional(t.Nullable(t.String())),
+            zipcode: t.Optional(t.Nullable(t.String())),
+            city: t.Optional(t.Nullable(t.String())),
+            housingType: t.Optional(t.Nullable(t.String())),
+            housingOwnershipType: t.Optional(t.Nullable(t.String())),
+            relationshipStatus: t.String(),
+            childrenCount: t.Number({ minimum: 0 }),
+            goal: t.Optional(t.Nullable(t.String())),
+          }),
+          detail: { tags: ["Questionnaire"], summary: "Create or update questionnaire" },
+        }
+      )
   )
 
   // ============================================================================

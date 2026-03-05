@@ -94,6 +94,7 @@ async function request<T>(
 
   const response = await fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
@@ -298,5 +299,82 @@ export const dashboardApi = {
   get: async (): Promise<Dashboard> => {
     const response = await request<{ data: unknown }>("/dashboard");
     return DashboardSchema.parse(response.data);
+  },
+};
+
+// ============================================================================
+// Home API
+// ============================================================================
+
+export const CoverageAssessmentSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  status: z.enum(["MISSING", "WEAK", "ADEQUATE", "GOOD", "EXCELLENT"]),
+  score: z.number(),
+  priority: z.number(),
+  notes: z.string().nullable(),
+});
+
+export type CoverageAssessmentItem = z.infer<typeof CoverageAssessmentSchema>;
+
+export const HomeDataSchema = z.object({
+  user: z.object({
+    name: z.string().nullable(),
+    email: z.string(),
+  }),
+  score: z.number(),
+  coverageItems: z.array(CoverageAssessmentSchema),
+});
+
+export type HomeData = z.infer<typeof HomeDataSchema>;
+
+export const homeApi = {
+  get: async (): Promise<HomeData> => {
+    const response = await request<{ data: unknown }>("/home");
+    return HomeDataSchema.parse(response.data);
+  },
+};
+
+// ============================================================================
+// Questionnaire API
+// ============================================================================
+
+export const QuestionnaireSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  dateOfBirth: z.string(),
+  jobType: z.string(),
+  vehicleTypes: z.array(z.string()),
+  relationshipStatus: z.string(),
+  childrenCount: z.number(),
+  userId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type QuestionnaireData = z.infer<typeof QuestionnaireSchema>;
+
+export type QuestionnaireInput = {
+  name: string;
+  dateOfBirth: string;
+  jobType: string;
+  vehicleTypes: string[];
+  relationshipStatus: string;
+  childrenCount: number;
+};
+
+export const questionnaireApi = {
+  get: async (): Promise<QuestionnaireData | null> => {
+    const response = await request<{ data: unknown }>("/questionnaire");
+    if (!response || (response as { data: unknown }).data === null) return null;
+    return QuestionnaireSchema.parse((response as { data: unknown }).data);
+  },
+
+  submit: async (input: QuestionnaireInput): Promise<QuestionnaireData> => {
+    const response = await request<{ data: unknown }>("/questionnaire", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    return QuestionnaireSchema.parse((response as { data: unknown }).data);
   },
 };
