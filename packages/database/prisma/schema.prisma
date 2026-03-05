@@ -1,33 +1,112 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated"
+  provider        = "prisma-client-js"
+  output          = "../generated"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-// ============================================================================
-// User & Authentication (Better Auth)
-// ============================================================================
+// =====================================================================
+// ENUMS
+// =====================================================================
+
+enum InsuranceType {
+  PRIVATHAFTPFLICHT
+  HAUSRAT
+  KFZ
+  BERUFSUNFAEHIGKEIT
+  ZAHNZUSATZ
+  PFLEGE
+  UNFALL
+  RECHTSSCHUTZ
+  KRANKENZUSATZ
+}
+
+enum PaymentInterval {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum RelationshipStatus {
+  SINGLE
+  IN_A_RELATIONSHIP
+  MARRIED
+}
+
+enum VehicleType {
+  NONE
+  SCOOTER
+  CAR
+  MOTORCYCLE
+  PUBLIC_TRANSPORT
+}
+
+enum HousingType {
+  SHARED_ROOM
+  APARTMENT
+  HOUSE
+}
+
+enum HousingOwnershipType {
+  RENTING
+  MORTGAGE
+  OWNER
+}
+
+enum JobType {
+  STUDENT
+  APPRENTICE
+  EMPLOYEE
+  SEARCHING
+}
+
+enum GoalType {
+  CHEAPEST
+  BEST_VALUE
+  COMPREHENSIVE
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NotificationType {
+  JOB_STARTED
+  JOB_PROGRESS
+  JOB_COMPLETED
+  JOB_FAILED
+  SYSTEM
+}
+
+// =====================================================================
+// AUTH & USER TABLES (Merged & Backward Compatible)
+// =====================================================================
 
 model User {
-  id            String    @id
-  name          String?
+  id            String    @id @default(cuid())
+  name          String?   // Kept optional to maintain compatibility with old schema
   email         String    @unique
   emailVerified Boolean   @default(false) @map("email_verified")
   image         String?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  // Better Auth relations
+  // Auth relations
   sessions      Session[]
   accounts      Account[]
 
-  // App relations
+  // App relations (First Schema)
+  insurances    Insurance[]
+  proposals     Proposal[]
+  questionnaire Questionnaire?
+
+  // App relations (Old Schema)
   jobs          Job[]
   notifications Notification[]
 
@@ -35,28 +114,29 @@ model User {
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime @map("expires_at")
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
   token     String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  expiresAt DateTime @map("expires_at")
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("sessions")
 }
 
 model Account {
-  id                    String    @id
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
   accountId             String    @map("account_id")
   providerId            String    @map("provider_id")
-  accessToken           String?   @map("access_token")
-  refreshToken          String?   @map("refresh_token")
-  idToken               String?   @map("id_token")
+  accessToken           String?   @db.Text @map("access_token") // @db.Text kept from first schema
+  refreshToken          String?   @db.Text @map("refresh_token")
+  idToken               String?   @db.Text @map("id_token")
   accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
   refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
@@ -64,8 +144,7 @@ model Account {
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([accountId, providerId])
   @@index([userId])
@@ -73,7 +152,7 @@ model Account {
 }
 
 model Verification {
-  id         String    @id
+  id         String    @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime  @map("expires_at")
@@ -83,16 +162,98 @@ model Verification {
   @@map("verifications")
 }
 
-// ============================================================================
-// Jobs (BullMQ Jobs tracked in DB)
-// ============================================================================
+// =====================================================================
+// APP SPECIFIC TABLES (From First Schema)
+// =====================================================================
 
-enum JobStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
+model Insurance {
+  id        String          @id @default(cuid())
+  type      InsuranceType
+  company   String          @default("Unsere Partner-Versicherung AG")
+  rate      Decimal         @db.Decimal(10, 2)
+  interval  PaymentInterval
+  number    String
+
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@map("insurance")
 }
+
+model Document {
+  id          String    @id @default(cuid())
+  title       String
+  url         String
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  insuranceId String
+  insurance   Insurance @relation(fields: [insuranceId], references: [id], onDelete: Cascade)
+
+  @@map("document")
+}
+
+model Proposal {
+  id            String          @id @default(cuid())
+  type          InsuranceType
+  company       String          @default("Unsere Partner-Versicherung AG")
+  rate          Decimal         @db.Decimal(10, 2)
+  interval      PaymentInterval @default(MONTHLY)
+  templateId    String
+  isAiGenerated Boolean         @default(true)
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("proposal")
+}
+
+model Questionnaire {
+  id                   String                @id @default(cuid())
+  name                 String
+  dateOfBirth          DateTime              @db.Date
+  
+  // Adresse
+  streetName           String
+  streetNumber         String
+  zipcode              String
+  city                 String
+  
+  // Beruf & Finanzen
+  jobType              JobType
+  jobExpiryDate        DateTime?             @db.Date
+  salary               Decimal               @db.Decimal(10, 2)
+  
+  // Lebenssituation
+  relationshipStatus   RelationshipStatus
+  childrenCount        Int                   @default(0)
+  
+  // Besitztümer & Wohnen
+  vehicleTypes         VehicleType[]
+  housingType          HousingType
+  housingOwnershipType HousingOwnershipType?
+  goal                 GoalType
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  userId               String                @unique
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("questionnaire")
+}
+
+// ============================================================================
+// JOBS & NOTIFICATIONS (From Old Schema)
+// ============================================================================
 
 model Job {
   id          String    @id @default(cuid())
@@ -111,25 +272,13 @@ model Job {
   completedAt DateTime? @map("completed_at")
 
   // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
   @@index([type])
   @@map("jobs")
-}
-
-// ============================================================================
-// Notifications (for WebSocket & Sync)
-// ============================================================================
-
-enum NotificationType {
-  JOB_STARTED
-  JOB_PROGRESS
-  JOB_COMPLETED
-  JOB_FAILED
-  SYSTEM
 }
 
 model Notification {
@@ -142,8 +291,8 @@ model Notification {
   createdAt DateTime         @default(now()) @map("created_at")
 
   // Relations
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String           @map("user_id")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
@@ -151,14 +300,10 @@ model Notification {
   @@map("notifications")
 }
 
-// ============================================================================
-// Sync Metadata (for client-side sync)
-// ============================================================================
-
 model SyncCursor {
   id        String   @id @default(cuid())
-  userId    String   @unique @map("user_id")
-  entity    String // e.g., "notifications", "jobs"
+  userId    String   @map("user_id")
+  entity    String   // e.g., "notifications", "jobs"
   cursor    DateTime // last synced timestamp
   updatedAt DateTime @updatedAt @map("updated_at")
 
