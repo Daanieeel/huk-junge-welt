@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, ShieldAlert } from "lucide-react";
 import { clientEnv } from "@repo/env/client";
 import { Button } from "@/components/ui/button";
 import { ScoreGauge } from "@/components/home/score-gauge";
+import { BottomNav } from "@/components/nav/bottom-nav";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -52,6 +54,9 @@ async function getHomeData(): Promise<HomeData | null> {
 }
 
 // ─── Display helpers ───────────────────────────────────────────────────────────
+
+const HUK_LOGO =
+  "https://static.c.huk24.de/content/dam/huk24/web/allgemein/%C3%BCber-uns/HUK_Logo_gelb_nachtblau_RGB_800x800px.png";
 
 const INSURANCE_LABELS: Record<InsuranceType, string> = {
   PRIVATHAFTPFLICHT: "Privathaftpflicht",
@@ -126,7 +131,7 @@ export default async function HomePage() {
   const data = await getHomeData();
   const score = data?.score ?? 0;
   const coverageItems = data?.coverageItems ?? [];
-  const firstName = data?.user.name?.split(" ")[0] ?? "dort";
+  const firstName = data?.user.name?.split(" ")[0] ?? "Name not found";
 
   const { label: scoreLabel, sublabel: scoreSubLabel } = getScoreInfo(score);
   const hasCriticalGap = coverageItems.some(
@@ -134,116 +139,128 @@ export default async function HomePage() {
   );
 
   return (
-    <div className="flex flex-col min-h-svh bg-background">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2">
-        <div>
-          <p className="text-[9px] font-semibold tracking-[0.2em] uppercase text-muted-foreground/60 leading-none mb-0.5">
-            HUK
+    <div className="h-svh flex flex-col bg-background">
+
+      {/* ── Top bar (logo centred) ── */}
+      <header className="shrink-0 flex items-center justify-center gap-2.5 px-5 pt-5 pb-3">
+        <div className="w-9 h-9 rounded-xl overflow-hidden bg-white shadow-sm shrink-0">
+          <Image
+            src={HUK_LOGO}
+            alt="HUK Logo"
+            width={36}
+            height={36}
+            className="object-cover w-full h-full"
+          />
+        </div>
+        <span className="text-[20px] font-black tracking-tight text-foreground leading-none">
+          JUNGE WELT
+        </span>
+      </header>
+
+      {/* ── Scrollable content ── */}
+      <div className="flex flex-col items-center flex-1 overflow-y-auto">
+
+        {/* Greeting */}
+        <div className="px-5 pt-1 pb-2">
+          <h2 className="text-[28px] font-bold text-foreground leading-tight">
+            Hallo, {firstName}!
+          </h2>
+          <p className="text-[13px] text-muted-foreground mt-0.5">
+            Dein Versicherungsüberblick
           </p>
-          <p className="text-[18px] font-black tracking-tight text-foreground leading-none">
-            JUNGE WELT
+        </div>
+
+        {/* Score section */}
+        <div className="px-5">
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground text-center mb-1">
+            Versicherungsschutz
           </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[13px] font-semibold text-foreground">Hallo, {firstName}!</p>
-          <p className="text-[11px] text-muted-foreground">Dein Überblick</p>
-        </div>
-      </div>
 
-      {/* ── Score section ── */}
-      <div className="px-5 pt-3">
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground text-center mb-1">
-          Versicherungsschutz
-        </p>
+          <ScoreGauge score={score} />
 
-        <ScoreGauge score={score} />
-
-        {/* Text pulled up to overlap the empty half of the gauge square */}
-        <div className="text-center -mt-24 mb-5">
-          <p className="text-[15px] font-bold text-foreground">{scoreLabel}</p>
-          {hasCriticalGap ? (
-            <p className="text-[12px] text-destructive mt-1 flex items-center justify-center gap-1">
-              <ShieldAlert className="size-3 shrink-0" />
-              Kritische Lücken erkannt
-            </p>
-          ) : (
-            <p className="text-[12px] text-muted-foreground mt-1">{scoreSubLabel}</p>
-          )}
-        </div>
-
-        {/* ── CTA ── */}
-        <Button size="cta" render={<Link href="/bedarfscheck" />} nativeButton={false}>
-          <span>Bedarfscheck starten</span>
-          <ArrowRight />
-        </Button>
-        <p className="text-[11px] text-muted-foreground text-center mt-2.5 mb-6">
-          Persönliche Analyse in 5 Minuten
-        </p>
-      </div>
-
-      {/* ── Coverage list ── */}
-      <div className="flex-1 bg-muted/50 px-4 pt-4 pb-10">
-        <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-3 px-1">
-          Dein Überblick
-        </p>
-
-        {coverageItems.length === 0 ? (
-          <div className="bg-card rounded-2xl px-5 py-6 ring-1 ring-foreground/8 text-center">
-            <p className="text-[13px] text-muted-foreground leading-relaxed">
-              Noch keine Analyse vorhanden.
-              <br />
-              Starte den Bedarfscheck für deine persönliche Einschätzung.
-            </p>
+          <div className="text-center -mt-24 mb-5">
+            <p className="text-[15px] font-bold text-foreground">{scoreLabel}</p>
+            {hasCriticalGap ? (
+              <p className="text-[12px] text-destructive mt-1 flex items-center justify-center gap-1">
+                <ShieldAlert className="size-3 shrink-0" />
+                Kritische Lücken erkannt
+              </p>
+            ) : (
+              <p className="text-[12px] text-muted-foreground mt-1">{scoreSubLabel}</p>
+            )}
           </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {coverageItems.map((item) => {
-              const config = STATUS_CONFIG[item.status];
-              const emoji = INSURANCE_EMOJIS[item.type];
-              const label = INSURANCE_LABELS[item.type];
-              const isCritical = item.status === "MISSING" && item.priority <= 2;
 
-              return (
-                <div
-                  key={item.id}
-                  className={`bg-card rounded-2xl px-4 py-3.5 ring-1 flex items-center justify-between ${
-                    isCritical ? "ring-destructive/30" : "ring-foreground/8"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[20px] leading-none">{emoji}</span>
-                    <span className="text-[13px] font-medium text-foreground">{label}</span>
-                  </div>
+          {/* CTA */}
+          <Button size="cta" render={<Link href="/bedarfscheck" />} nativeButton={false}>
+            <span>Bedarfscheck starten</span>
+            <ArrowRight />
+          </Button>
+          <p className="text-[11px] text-muted-foreground text-center mt-2.5 mb-6">
+            Persönliche Analyse in 5 Minuten
+          </p>
+        </div>
 
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    {/* Dot indicators */}
-                    <div className="flex gap-[3px] items-center">
-                      {[0, 1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className={`size-[5px] rounded-full ${
-                            i < config.dotsFilled
-                              ? "bg-foreground/65"
-                              : "bg-foreground/15"
-                          }`}
-                        />
-                      ))}
+        {/* Coverage list */}
+        <div className="bg-muted/50 px-4 pt-4 pb-10">
+          <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-3 px-1">
+            Dein Überblick
+          </p>
+
+          {coverageItems.length === 0 ? (
+            <div className="bg-card rounded-2xl px-5 py-6 ring-1 ring-foreground/8 text-center">
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                Noch keine Analyse vorhanden.
+                <br />
+                Starte den Bedarfscheck für deine persönliche Einschätzung.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {coverageItems.map((item) => {
+                const config = STATUS_CONFIG[item.status];
+                const emoji = INSURANCE_EMOJIS[item.type];
+                const label = INSURANCE_LABELS[item.type];
+                const isCritical = item.status === "MISSING" && item.priority <= 2;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-card rounded-2xl px-4 py-3.5 ring-1 flex items-center justify-between ${
+                      isCritical ? "ring-destructive/30" : "ring-foreground/8"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-[20px] leading-none">{emoji}</span>
+                      <span className="text-[13px] font-medium text-foreground">{label}</span>
                     </div>
 
-                    {/* Status badge */}
-                    <span
-                      className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap ${config.badgeClass}`}
-                    >
-                      {config.label}
-                    </span>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <div className="flex gap-[3px] items-center">
+                        {[0, 1, 2, 3].map((i) => (
+                          <div
+                            key={i}
+                            className={`size-[5px] rounded-full ${
+                              i < config.dotsFilled ? "bg-foreground/65" : "bg-foreground/15"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span
+                        className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap ${config.badgeClass}`}
+                      >
+                        {config.label}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Bottom navigation ── */}
+      <BottomNav />
     </div>
   );
 }
