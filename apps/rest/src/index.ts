@@ -497,6 +497,7 @@ const app = new Elysia()
 
         return {
           data: {
+            user: { name: user.name, email: user.email },
             score,
             scoreLabel: scoreLabel(score),
             totalRecommended: items.length,

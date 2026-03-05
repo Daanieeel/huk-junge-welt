@@ -14,7 +14,24 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ScoreGauge({ score }: { score: number }) {
+export function ScoreGauge({ score, isProcessing }: { score: number; isProcessing?: boolean }) {
+  if (isProcessing) {
+    return (
+      <div className="mx-auto w-full max-w-[260px]">
+        {/*
+          viewBox crops to just the ring: x=0..260, y=18..130 (outer arc peak to center line).
+          Path uses sweep=1 for outer (CW → top) and sweep=0 for inner return (CCW → top).
+        */}
+        <svg viewBox="0 18 260 112" className="w-full">
+          <path
+            d="M 18,130 A 112,112 0 0 1 242,130 L 202,130 A 72,72 0 0 0 58,130 Z"
+            className="fill-muted animate-pulse"
+          />
+        </svg>
+      </div>
+    )
+  }
+
   const chartData = [{ score, remainder: 100 - score }]
 
   return (

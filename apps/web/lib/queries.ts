@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { homeApi, questionnaireApi } from "./api-client";
+import { homeApi, questionnaireApi, dashboardApi } from "./api-client";
 import { api } from "./eden";
 
 export const queryKeys = {
   home: ["home"] as const,
+  dashboard: ["dashboard"] as const,
   questionnaire: ["questionnaire"] as const,
 } as const;
 
@@ -11,6 +12,13 @@ export function useHomeQuery() {
   return useQuery({
     queryKey: queryKeys.home,
     queryFn: homeApi.get,
+  });
+}
+
+export function useDashboardQuery() {
+  return useQuery({
+    queryKey: queryKeys.dashboard,
+    queryFn: dashboardApi.get,
   });
 }
 
@@ -48,6 +56,7 @@ export function useSubmitQuestionnaire() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.questionnaire });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
       queryClient.invalidateQueries({ queryKey: queryKeys.home });
     },
   });

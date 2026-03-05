@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Headphones, Home, Plus, User } from "lucide-react";
+import { FileText, Home, Plus, Sparkles, User } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/vertraege", icon: FileText, label: "Verträge" },
   { href: "/upload", icon: null, label: "" }, // centre action
-  { href: "/services", icon: Headphones, label: "Services" },
+  { href: "/vertragsempfehlungen", icon: Sparkles, label: "Empfehlungen" },
   { href: "/profil", icon: User, label: "Profil" },
 ];
 
@@ -33,7 +33,7 @@ export function BottomNav() {
             );
           }
 
-          const isActive = pathname === href;
+          const isActive = href === "/" ? pathname === href : pathname.startsWith(href);
 
           return (
             <Link

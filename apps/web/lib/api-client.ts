@@ -285,6 +285,7 @@ export const CoverageItemSchema = z.object({
 export type CoverageItem = z.infer<typeof CoverageItemSchema>;
 
 export const DashboardSchema = z.object({
+  user: z.object({ name: z.string().nullable(), email: z.string() }),
   score: z.number(),
   scoreLabel: z.string(),
   totalRecommended: z.number(),

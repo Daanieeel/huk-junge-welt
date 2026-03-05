@@ -1,6 +1,6 @@
 "use client";
 
-import { useHomeQuery } from "@/lib/queries";
+import { useDashboardQuery } from "@/lib/queries";
 import { ScoreSection } from "./score-section";
 import { CoverageList } from "./coverage-list";
 import { HomeScreenSkeleton } from "./home-skeleton";
@@ -21,7 +21,7 @@ function getScoreInfo(score: number): { label: string; sublabel: string } {
 }
 
 export function HomeScreen() {
-  const { data, isLoading, isError } = useHomeQuery();
+  const { data, isLoading, isError } = useDashboardQuery();
 
   if (isLoading) return <HomeScreenSkeleton />;
 
@@ -36,20 +36,17 @@ export function HomeScreen() {
   }
 
   const { label: scoreLabel, sublabel: scoreSubLabel } = getScoreInfo(data.score);
-  const hasCriticalGap = data.coverageItems.some(
-    (item) => item.status === "MISSING" && item.priority <= 2
-  );
+  const proposals = data.items.filter((i) => i.proposal !== null);
+  const isProcessing = data.hasQuestionnaire && proposals.length === 0;
+  const hasCriticalGap = isProcessing;
   const firstName = data.user.name?.split(" ")[0] ?? "";
 
   return (
     <>
-      <div className="px-5 pt-1 pb-2">
+      <div className="px-5 pt-1 pb-2 flex items-center flex-col">
         <h2 className="text-[28px] font-bold text-foreground leading-tight">
           Hallo, {firstName}!
         </h2>
-        <p className="text-[13px] text-muted-foreground mt-0.5">
-          Dein Versicherungsüberblick
-        </p>
       </div>
 
       <ScoreSection
@@ -57,9 +54,14 @@ export function HomeScreen() {
         scoreLabel={scoreLabel}
         scoreSubLabel={scoreSubLabel}
         hasCriticalGap={hasCriticalGap}
+        hasQuestionnaire={data.hasQuestionnaire}
+        isProcessing={isProcessing}
       />
 
-      <CoverageList items={data.coverageItems} />
+      <CoverageList
+        items={data.items}
+        hasQuestionnaire={data.hasQuestionnaire}
+      />
     </>
   );
 }
