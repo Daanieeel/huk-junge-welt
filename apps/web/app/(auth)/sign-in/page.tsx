@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -48,30 +48,15 @@ function SignInForm() {
     >
       {/* ── Amber hero ── */}
       <div
-        className="bg-primary relative shrink-0 flex flex-col justify-between px-6 pt-8 pb-8"
-        style={{ height: "42svh" }}
+        className="bg-primary relative shrink-0 flex flex-col justify-between px-6 pt-8 pb-8 gap-12"
       >
-        {/* Faint background shield */}
-        <div
-          className="absolute right-4 top-4 select-none pointer-events-none"
-          style={{ fontSize: 130, opacity: 0.12, lineHeight: 1 }}
-        >
-          🛡️
-        </div>
 
         {/* Logo + app name */}
-        <div className="relative flex items-center gap-3">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white shadow-md shrink-0">
-            <Image src={HUK_LOGO} alt="HUK Logo" width={56} height={56} className="object-cover w-full h-full" />
-          </div>
-          <div className="flex flex-col justify-center">
-            <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-primary-foreground/50 leading-none mb-1">
-              HUK
-            </span>
-            <span className="text-[22px] font-black tracking-tight text-primary-foreground leading-none">
+        <div className="flex items-center py-4 w-full justify-center">
+           <Image src={HUK_LOGO} alt="HUK Logo" width={56} height={56} className="object-cover" />
+          <span className="text-sm font-black tracking-tight text-primary-foreground leading-none">
               JUNGE WELT
             </span>
-          </div>
         </div>
 
         {/* Page heading */}
@@ -131,7 +116,7 @@ function SignInForm() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" size="cta" disabled={loading} className="mt-1">
-            {loading ? "Einen Moment…" : <><span>Anmelden</span><ArrowRight /></>}
+            {loading ? <LoaderCircle className="animate-spin" /> : <><span>Anmelden</span><ArrowRight /></>}
           </Button>
         </form>
 

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { AppHeader } from "@/components/nav/app-header";
 
 const HUK_LOGO =
   "https://static.c.huk24.de/content/dam/huk24/web/allgemein/%C3%BCber-uns/HUK_Logo_gelb_nachtblau_RGB_800x800px.png";
@@ -54,21 +54,8 @@ export default function SignUpPage() {
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
       {/* ── Mosaic hero ── */}
-      <div className="bg-muted select-none shrink-0 flex flex-col" style={{ height: "42svh" }}>
-        {/* Logo + app name strip */}
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2.5 shrink-0">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden bg-white shadow-md shrink-0">
-            <Image src={HUK_LOGO} alt="HUK Logo" width={48} height={48} className="object-cover w-full h-full" />
-          </div>
-          <div className="flex flex-col justify-center">
-            <span className="text-[9px] font-semibold tracking-[0.2em] uppercase text-muted-foreground/60 leading-none mb-0.5">
-              HUK
-            </span>
-            <span className="text-[20px] font-black tracking-tight text-foreground leading-none">
-              JUNGE WELT
-            </span>
-          </div>
-        </div>
+      <div className="select-none shrink-0 flex flex-col" style={{ height: "42svh" }}>
+        <AppHeader />
 
         {/* Tiles */}
         <div className="flex-1 flex gap-2 px-2.5 pb-2.5">
@@ -82,11 +69,17 @@ export default function SignUpPage() {
             </div>
             <div
               className="absolute bottom-0 left-0 right-0 p-2.5"
-              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 100%)" }}
+              style={{
+                background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 100%)",
+              }}
             >
-              <p className="text-[9px] font-medium text-primary-foreground/60 mb-0.5">Auto/Kfz/E-Roller</p>
+              <p className="text-[9px] font-medium text-primary-foreground/60 mb-0.5">
+                Auto/Kfz/E-Roller
+              </p>
               <p className="text-[12px] font-bold text-primary-foreground leading-tight">
-                Mobilitäts-<br />Schutz
+                Mobilitäts-
+                <br />
+                Schutz
               </p>
             </div>
           </div>
@@ -120,13 +113,18 @@ export default function SignUpPage() {
       <div className="flex-1 bg-background px-6 pt-5 pb-7 flex flex-col overflow-hidden">
         <div className="mb-4">
           <h1 className="text-[22px] font-bold text-foreground leading-tight">Konto erstellen</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Starte jetzt und entdecke deine Versicherungsoptionen.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Starte jetzt und entdecke deine Versicherungsoptionen.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           {/* Name */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name" className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+            <Label
+              htmlFor="name"
+              className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground"
+            >
               Vollständiger Name
             </Label>
             <Input
@@ -143,7 +141,10 @@ export default function SignUpPage() {
 
           {/* Email */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email" className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+            <Label
+              htmlFor="email"
+              className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground"
+            >
               E-Mail Adresse
             </Label>
             <Input
@@ -160,7 +161,10 @@ export default function SignUpPage() {
 
           {/* Password */}
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password" className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+            <Label
+              htmlFor="password"
+              className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground"
+            >
               Passwort
             </Label>
             <InputGroup className="h-10">
@@ -185,13 +189,23 @@ export default function SignUpPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" size="cta" disabled={loading} className="mt-1">
-            {loading ? "Einen Moment…" : <><span>Konto erstellen</span><ArrowRight /></>}
+            {loading ? (
+              <LoaderCircle className="animate-spin" />
+            ) : (
+              <>
+                <span>Konto erstellen</span>
+                <ArrowRight />
+              </>
+            )}
           </Button>
         </form>
 
         <p className="mt-auto text-sm text-muted-foreground text-center">
           Bereits registriert?{" "}
-          <Link href="/sign-in" className="font-semibold text-foreground underline underline-offset-4">
+          <Link
+            href="/sign-in"
+            className="font-semibold text-foreground underline underline-offset-4"
+          >
             Anmelden
           </Link>
         </p>
@@ -199,3 +213,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+        
