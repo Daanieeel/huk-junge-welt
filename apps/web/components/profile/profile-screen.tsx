@@ -5,6 +5,7 @@ import { LogOut, RefreshCw, User } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useBedarfscheckStore } from "@/lib/bedarfscheck-store";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { Button } from "@/components/ui/button";
 
 interface ProfileScreenProps {
   user: { name: string | null; email: string };
@@ -35,7 +36,7 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
 
       <div className="px-4 flex flex-col gap-4">
         {/* Account card */}
-        <section>
+        <section className="flex flex-col gap-2">
           <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
             Konto
           </p>
@@ -52,6 +53,15 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
               </div>
             </div>
           </div>
+          <Button
+          onClick={handleSignOut}
+          className="w-full"
+          variant={'destructive'}
+          size={'xl'}
+        >
+          <LogOut className="size-4 shrink-0" />
+          <p>Abmelden</p>
+        </Button>
         </section>
 
         {/* Appearance */}
@@ -70,33 +80,18 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
           <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
             Einstellungen
           </p>
-          <div className="bg-card rounded-2xl ring-1 ring-foreground/8 divide-y divide-border">
-            <button
+          <Button
               onClick={handleResetBedarfscheck}
-              className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
+              className="w-full flex items-center justify-start h-auto gap-3 px-4 py-3.5"
+              variant={'outline'}
             >
               <RefreshCw className="size-4 text-muted-foreground shrink-0" />
               <div>
                 <p className="text-[13px] font-medium text-foreground">Bedarfscheck zurücksetzen</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Fragebogen erneut ausfüllen
+                <p className="text-[11px] text-muted-foreground mt-0.5">Fragebogen erneut ausfüllen
                 </p>
               </div>
-            </button>
-          </div>
-        </section>
-
-        {/* Sign out */}
-        <section>
-          <div className="bg-card rounded-2xl ring-1 ring-foreground/8">
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
-            >
-              <LogOut className="size-4 text-destructive shrink-0" />
-              <p className="text-[13px] font-medium text-destructive">Abmelden</p>
-            </button>
-          </div>
+            </Button>
         </section>
       </div>
     </div>
