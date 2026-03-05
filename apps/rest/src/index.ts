@@ -3,6 +3,7 @@ import { Elysia, t } from "elysia";
 import { env } from "@repo/env/server";
 import { prisma, JobStatus } from "@repo/database";
 import { createExternalApiJobProducer } from "@repo/message-queue";
+import { auth } from "@repo/auth";
 
 // ============================================================================
 // Initialize Services
@@ -11,12 +12,44 @@ import { createExternalApiJobProducer } from "@repo/message-queue";
 const jobProducer = createExternalApiJobProducer(env.BULLMQ_REDIS_URL);
 
 // ============================================================================
-// Elysia App Setup
+// Better Auth Elysia Plugin
+//
+// Mounts the auth handler at /api/auth/* and exposes a typed macro that
+// resolves the current session. Routes decorated with { auth: true } will
+// receive `user` and `session` in their context; unauthenticated requests
+// are rejected with HTTP 401 before the route handler runs.
 // ============================================================================
 
-// Using 'as const' to avoid complex type inference issues with Prisma
+const betterAuthPlugin = new Elysia({ name: "better-auth" })
+  .mount(auth.handler)
+  .macro({
+    auth: {
+      async resolve({ status, request: { headers } }) {
+        const session = await auth.api.getSession({ headers });
+        if (!session) return status(401);
+        return {
+          user: session.user,
+          session: session.session,
+        };
+      },
+    },
+  });
+
+// ============================================================================
+// Elysia App
+// ============================================================================
+
 const app = new Elysia()
-  .use(cors())
+  .use(
+    cors({
+      origin: env.WEB_URL,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
+  .use(betterAuthPlugin)
+
   // Error handling
   .onError(({ code, error, set }): { error: string; details?: string } | undefined => {
     console.error(`Error [${code}]:`, error);
@@ -36,7 +69,7 @@ const app = new Elysia()
   })
 
   // ============================================================================
-  // Health Check
+  // Health Check (public)
   // ============================================================================
   .get("/health", () => ({
     status: "ok",
@@ -44,113 +77,63 @@ const app = new Elysia()
   }))
 
   // ============================================================================
-  // User Routes
+  // User Routes (authenticated)
+  // Returns only the current authenticated user's profile.
   // ============================================================================
   .group("/users", (app) =>
     app
       .get(
-        "/",
-        async () => {
-          const users = await prisma.user.findMany({
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              createdAt: true,
-            },
-          });
-          return { data: users };
-        },
+        "/me",
+        async ({ user }) => ({ data: user }),
         {
-          detail: {
-            tags: ["Users"],
-            summary: "Get all users",
-          },
+          auth: true,
+          detail: { tags: ["Users"], summary: "Get current user profile" },
         }
       )
-      .get(
-        "/:id",
-        async ({ params, set }) => {
-          const user = await prisma.user.findUnique({
-            where: { id: params.id },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              createdAt: true,
-              updatedAt: true,
-            },
+      .patch(
+        "/me",
+        async ({ user, body }) => {
+          const updated = await prisma.user.update({
+            where: { id: user.id },
+            data: { name: body.name, image: body.image },
+            select: { id: true, email: true, name: true, image: true, createdAt: true, updatedAt: true },
           });
-
-          if (!user) {
-            set.status = 404;
-            return { error: "User not found" };
-          }
-
-          return { data: user };
+          return { data: updated };
         },
         {
-          params: t.Object({
-            id: t.String(),
-          }),
-          detail: {
-            tags: ["Users"],
-            summary: "Get user by ID",
-          },
-        }
-      )
-      .post(
-        "/",
-        async ({ body }) => {
-          const user = await prisma.user.create({
-            data: {
-              email: body.email,
-              name: body.name,
-            },
-          });
-          return { data: user };
-        },
-        {
+          auth: true,
           body: t.Object({
-            email: t.String({ format: "email" }),
             name: t.Optional(t.String()),
+            image: t.Optional(t.String()),
           }),
-          detail: {
-            tags: ["Users"],
-            summary: "Create a new user",
-          },
+          detail: { tags: ["Users"], summary: "Update current user profile" },
         }
       )
   )
 
   // ============================================================================
-  // Job Routes
+  // Job Routes (authenticated – scoped to the current user)
   // ============================================================================
   .group("/jobs", (app) =>
     app
       .get(
         "/",
-        async ({ query }) => {
+        async ({ user }) => {
           const jobs = await prisma.job.findMany({
-            where: query.userId ? { userId: query.userId } : undefined,
+            where: { userId: user.id },
             orderBy: { createdAt: "desc" },
             take: 50,
           });
           return { data: jobs };
         },
         {
-          query: t.Object({
-            userId: t.Optional(t.String()),
-          }),
-          detail: {
-            tags: ["Jobs"],
-            summary: "Get jobs",
-          },
+          auth: true,
+          detail: { tags: ["Jobs"], summary: "Get jobs for the current user" },
         }
       )
       .get(
         "/:id",
-        async ({ params, set }) => {
+        async ({ user, params, set }) => {
           const job = await prisma.job.findUnique({
             where: { id: params.id },
           });
@@ -160,40 +143,40 @@ const app = new Elysia()
             return { error: "Job not found" };
           }
 
+          // Ensure the job belongs to the authenticated user
+          if (job.userId !== user.id) {
+            set.status = 403;
+            return { error: "Forbidden" };
+          }
+
           return { data: job };
         },
         {
-          params: t.Object({
-            id: t.String(),
-          }),
-          detail: {
-            tags: ["Jobs"],
-            summary: "Get job by ID",
-          },
+          auth: true,
+          params: t.Object({ id: t.String() }),
+          detail: { tags: ["Jobs"], summary: "Get job by ID" },
         }
       )
       .post(
         "/",
-        async ({ body }) => {
-          // Create job in database
+        async ({ user, body }) => {
           const dbJob = await prisma.job.create({
             data: {
               type: body.type,
               payload: body.payload,
               status: JobStatus.PENDING,
-              userId: body.userId,
+              userId: user.id,
               priority: body.priority ?? 0,
             },
           });
 
-          // Add job to BullMQ queue
           const { jobId, correlationId } = await jobProducer.addFetchDataJob(
             {
-              userId: body.userId,
+              userId: user.id,
               endpoint: body.payload.endpoint ?? "/default",
               params: body.payload.params ?? {},
             },
-            body.userId,
+            user.id,
             dbJob.id
           );
 
@@ -206,34 +189,31 @@ const app = new Elysia()
           };
         },
         {
+          auth: true,
           body: t.Object({
             type: t.String(),
             payload: t.Object({
               endpoint: t.Optional(t.String()),
               params: t.Optional(t.Record(t.String(), t.String())),
             }),
-            userId: t.String(),
             priority: t.Optional(t.Number()),
           }),
-          detail: {
-            tags: ["Jobs"],
-            summary: "Create a new job",
-          },
+          detail: { tags: ["Jobs"], summary: "Create a new job" },
         }
       )
   )
 
   // ============================================================================
-  // Notification Routes
+  // Notification Routes (authenticated – scoped to the current user)
   // ============================================================================
   .group("/notifications", (app) =>
     app
       .get(
         "/",
-        async ({ query }) => {
+        async ({ user, query }) => {
           const notifications = await prisma.notification.findMany({
             where: {
-              userId: query.userId,
+              userId: user.id,
               read: query.unreadOnly ? false : undefined,
             },
             orderBy: { createdAt: "desc" },
@@ -242,84 +222,78 @@ const app = new Elysia()
           return { data: notifications };
         },
         {
+          auth: true,
           query: t.Object({
-            userId: t.String(),
             unreadOnly: t.Optional(t.Boolean()),
           }),
-          detail: {
-            tags: ["Notifications"],
-            summary: "Get notifications for a user",
-          },
+          detail: { tags: ["Notifications"], summary: "Get notifications for the current user" },
         }
       )
       .patch(
         "/:id/read",
-        async ({ params }) => {
-          const notification = await prisma.notification.update({
+        async ({ user, params, set }) => {
+          const notification = await prisma.notification.findUnique({
+            where: { id: params.id },
+          });
+
+          if (!notification) {
+            set.status = 404;
+            return { error: "Notification not found" };
+          }
+
+          if (notification.userId !== user.id) {
+            set.status = 403;
+            return { error: "Forbidden" };
+          }
+
+          const updated = await prisma.notification.update({
             where: { id: params.id },
             data: { read: true },
           });
-          return { data: notification };
+          return { data: updated };
         },
         {
-          params: t.Object({
-            id: t.String(),
-          }),
-          detail: {
-            tags: ["Notifications"],
-            summary: "Mark notification as read",
-          },
+          auth: true,
+          params: t.Object({ id: t.String() }),
+          detail: { tags: ["Notifications"], summary: "Mark notification as read" },
         }
       )
       .patch(
         "/mark-all-read",
-        async ({ body }) => {
+        async ({ user }) => {
           await prisma.notification.updateMany({
-            where: { userId: body.userId, read: false },
+            where: { userId: user.id, read: false },
             data: { read: true },
           });
           return { success: true };
         },
         {
-          body: t.Object({
-            userId: t.String(),
-          }),
-          detail: {
-            tags: ["Notifications"],
-            summary: "Mark all notifications as read",
-          },
+          auth: true,
+          detail: { tags: ["Notifications"], summary: "Mark all notifications as read" },
         }
       )
   )
 
   // ============================================================================
-  // Sync Routes (for Dexie sync)
+  // Sync Routes (authenticated – for Dexie sync engine)
   // ============================================================================
   .group("/sync", (app) =>
     app.get(
       "/changes",
-      async ({ query }) => {
+      async ({ user, query }) => {
         const since = query.since ? new Date(query.since) : new Date(0);
 
-        // Get all changes since the cursor
         const [jobs, notifications] = await Promise.all([
           prisma.job.findMany({
-            where: {
-              userId: query.userId,
-              updatedAt: { gt: since },
-            },
+            where: { userId: user.id, updatedAt: { gt: since } },
             orderBy: { updatedAt: "asc" },
           }),
           prisma.notification.findMany({
-            where: {
-              userId: query.userId,
-              createdAt: { gt: since },
-            },
+            where: { userId: user.id, createdAt: { gt: since } },
             orderBy: { createdAt: "asc" },
           }),
         ]);
 
-        // Calculate new cursor
         const allTimestamps = [
           ...jobs.map((j) => j.updatedAt),
           ...notifications.map((n) => n.createdAt),
@@ -338,14 +312,11 @@ const app = new Elysia()
         };
       },
       {
+        auth: true,
         query: t.Object({
-          userId: t.String(),
           since: t.Optional(t.String()),
         }),
-        detail: {
-          tags: ["Sync"],
-          summary: "Get changes since cursor",
-        },
+        detail: { tags: ["Sync"], summary: "Get changes since cursor" },
       }
     )
   )

@@ -6,10 +6,13 @@ export {
   JobStatus,
   NotificationType,
   Prisma,
+  type Account,
   type Job,
   type Notification,
+  type Session,
   type SyncCursor,
   type User,
+  type Verification,
 } from "../generated/client";
 
 // Input types for creating entities

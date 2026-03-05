@@ -7,6 +7,7 @@ import {
   isNotificationMessage,
   type PubSubMessage,
 } from "@repo/pub-sub";
+import { auth, type AuthUser } from "@repo/auth";
 
 // ============================================================================
 // Types
@@ -21,7 +22,6 @@ interface WebSocketData {
 // Connection Management
 // ============================================================================
 
-// Track active connections by userId
 const userConnections = new Map<string, Set<WebSocketData>>();
 
 function addConnection(userId: string, data: WebSocketData): void {
@@ -50,177 +50,33 @@ function isUserOnline(userId: string): boolean {
 }
 
 // ============================================================================
+// Auth Helpers
+//
+// The WebSocket upgrade request may not carry cookies cross-origin.
+// We accept the session token as a query parameter and validate it via
+// the shared better-auth instance (no extra HTTP hop – direct DB lookup).
+// ============================================================================
+
+async function resolveSession(
+  token: string
+): Promise<{ user: AuthUser } | null> {
+  const headers = new Headers({ Authorization: `Bearer ${token}` });
+  const session = await auth.api.getSession({ headers });
+  if (!session) return null;
+  return { user: session.user };
+}
+
+// ============================================================================
 // Redis Pub/Sub Subscriber
 // ============================================================================
 
 const subscriber = getSubscriber(env.PUBSUB_REDIS_URL, "websocket");
 
-// Message handler that broadcasts to connected WebSocket clients
-function handlePubSubMessage(channel: string, message: PubSubMessage): void {
-  // Extract userId from the message
-  let targetUserId: string | undefined;
-
-  if (isJobEventMessage(message)) {
-    targetUserId = message.userId;
-  } else if (isNotificationMessage(message)) {
-    targetUserId = message.userId;
-  }
-
-  if (!targetUserId) {
-    console.warn("Received message without userId:", message);
-    return;
-  }
-
-  // Broadcast to all connections for this user
-  const connections = userConnections.get(targetUserId);
-  if (connections && connections.size > 0) {
-    const _payload = JSON.stringify({
-      channel,
-      message,
-    });
-
-    // Use Elysia's WebSocket broadcast (we'll store ws references)
-    console.log(`📤 Broadcasting to ${connections.size} connections for user ${targetUserId}`);
-    
-    // The actual send happens via the ws.send in the websocket handler
-    // We need to store ws references - this is a simplified approach
-    // In production, you'd want to store the actual ws references
-  }
-}
-
 // ============================================================================
-// Subscription Management
+// WebSocket Instance Store (for broadcasting)
 // ============================================================================
 
-async function subscribeToUserChannels(userId: string): Promise<void> {
-  if (!subscriber.isSubscribedToUser(userId)) {
-    await subscriber.subscribeToUser(userId, handlePubSubMessage);
-    console.log(`📡 Subscribed to channels for user: ${userId}`);
-  }
-}
-
-async function unsubscribeFromUserChannels(userId: string): Promise<void> {
-  // Only unsubscribe if no more connections for this user
-  if (!isUserOnline(userId)) {
-    await subscriber.unsubscribeFromUser(userId);
-    console.log(`📡 Unsubscribed from channels for user: ${userId}`);
-  }
-}
-
-// ============================================================================
-// WebSocket Server
-// ============================================================================
-
-// Store WebSocket instances for broadcasting
 const wsInstances = new Map<string, Set<{ send: (data: string) => void }>>();
-
-const app = new Elysia()
-  .use(cors())
-
-  // Health check
-  .get("/health", () => ({
-    status: "ok",
-    connections: getActiveUserIds().length,
-    timestamp: new Date().toISOString(),
-  }))
-
-  // List connected users (for debugging)
-  .get("/connections", () => ({
-    users: getActiveUserIds(),
-    total: Array.from(userConnections.values()).reduce(
-      (sum, set) => sum + set.size,
-      0
-    ),
-  }))
-
-  // WebSocket endpoint
-  .ws("/ws", {
-    query: t.Object({
-      userId: t.String(),
-    }),
-
-    open(ws) {
-      const userId = ws.data.query.userId;
-      const connectionData: WebSocketData = {
-        userId,
-        connectedAt: Date.now(),
-      };
-
-      // Store connection
-      addConnection(userId, connectionData);
-
-      // Store ws instance for broadcasting
-      if (!wsInstances.has(userId)) {
-        wsInstances.set(userId, new Set());
-      }
-      wsInstances.get(userId)?.add(ws);
-
-      // Subscribe to user's Redis channels
-      subscribeToUserChannels(userId).catch(console.error);
-
-      console.log(`🔌 Client connected: ${userId} (total: ${userConnections.get(userId)?.size ?? 0})`);
-
-      // Send welcome message
-      ws.send(
-        JSON.stringify({
-          type: "connected",
-          userId,
-          timestamp: Date.now(),
-        })
-      );
-    },
-
-    close(ws) {
-      const userId = ws.data.query.userId;
-      const connectionData: WebSocketData = {
-        userId,
-        connectedAt: 0, // We don't need exact match for removal
-      };
-
-      // Remove ws instance
-      const instances = wsInstances.get(userId);
-      if (instances) {
-        instances.delete(ws);
-        if (instances.size === 0) {
-          wsInstances.delete(userId);
-        }
-      }
-
-      // Remove connection tracking
-      removeConnection(userId, connectionData);
-
-      // Unsubscribe if no more connections
-      unsubscribeFromUserChannels(userId).catch(console.error);
-
-      console.log(`🔌 Client disconnected: ${userId}`);
-    },
-
-    message(ws, message) {
-      const userId = ws.data.query.userId;
-
-      // Handle incoming messages from client
-      // You can add message handling logic here
-      console.log(`📨 Message from ${userId}:`, message);
-
-      // Echo back for now (you can implement your own logic)
-      ws.send(
-        JSON.stringify({
-          type: "ack",
-          originalMessage: message,
-          timestamp: Date.now(),
-        })
-      );
-    },
-  })
-
-  .listen(env.WEBSOCKET_PORT);
-
-// ============================================================================
-// Broadcast Helper (called from pub/sub handler)
-// ============================================================================
-
-// Update the handlePubSubMessage to actually broadcast
-const _originalHandler = handlePubSubMessage;
 
 function broadcastToUser(userId: string, data: string): void {
   const instances = wsInstances.get(userId);
@@ -235,15 +91,180 @@ function broadcastToUser(userId: string, data: string): void {
   }
 }
 
-// Re-register with actual broadcasting
-subscriber.subscribeToJobEvents((channel, message) => {
-  if (isJobEventMessage(message)) {
-    broadcastToUser(
-      message.userId,
-      JSON.stringify({ channel, message })
-    );
+// ============================================================================
+// Subscription Management
+// ============================================================================
+
+async function subscribeToUserChannels(userId: string): Promise<void> {
+  if (!subscriber.isSubscribedToUser(userId)) {
+    await subscriber.subscribeToUser(userId, (_channel, _message) => {
+      // handled via job-events subscription below
+    });
+    console.log(`📡 Subscribed to channels for user: ${userId}`);
   }
-}).catch(console.error);
+}
+
+async function unsubscribeFromUserChannels(userId: string): Promise<void> {
+  if (!isUserOnline(userId)) {
+    await subscriber.unsubscribeFromUser(userId);
+    console.log(`📡 Unsubscribed from channels for user: ${userId}`);
+  }
+}
+
+// ============================================================================
+// Elysia App
+// ============================================================================
+
+const app = new Elysia()
+  .use(
+    cors({
+      origin: env.WEB_URL,
+      methods: ["GET", "OPTIONS"],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  )
+
+  // Health check (public)
+  .get("/health", () => ({
+    status: "ok",
+    connections: getActiveUserIds().length,
+    timestamp: new Date().toISOString(),
+  }))
+
+  // Active connections debug endpoint (public)
+  .get("/connections", () => ({
+    users: getActiveUserIds(),
+    total: Array.from(userConnections.values()).reduce(
+      (sum, set) => sum + set.size,
+      0
+    ),
+  }))
+
+  // ============================================================================
+  // WebSocket endpoint
+  //
+  // Clients must provide their session token as a query parameter:
+  //   ws://host/ws?token=<session_token>
+  //
+  // The token is validated against the shared better-auth instance on
+  // connection open. The connection is closed immediately if auth fails.
+  // ============================================================================
+  .ws("/ws", {
+    query: t.Object({
+      token: t.String(),
+    }),
+
+    async open(ws) {
+      const { token } = ws.data.query;
+
+      // Validate session via better-auth (direct DB lookup, no HTTP hop)
+      const resolved = await resolveSession(token);
+      if (!resolved) {
+        ws.send(
+          JSON.stringify({ type: "error", code: 401, message: "Unauthorized" })
+        );
+        ws.close();
+        return;
+      }
+
+      const { user } = resolved;
+      const connectionData: WebSocketData = {
+        userId: user.id,
+        connectedAt: Date.now(),
+      };
+
+      addConnection(user.id, connectionData);
+
+      if (!wsInstances.has(user.id)) {
+        wsInstances.set(user.id, new Set());
+      }
+      wsInstances.get(user.id)?.add(ws);
+
+      await subscribeToUserChannels(user.id);
+
+      console.log(
+        `🔌 Client connected: ${user.id} (total: ${userConnections.get(user.id)?.size ?? 0})`
+      );
+
+      ws.send(
+        JSON.stringify({
+          type: "connected",
+          userId: user.id,
+          timestamp: Date.now(),
+        })
+      );
+    },
+
+    async close(ws) {
+      const { token } = ws.data.query;
+
+      // Re-resolve to get the userId (tokens are cheap to validate from cache)
+      const resolved = await resolveSession(token);
+      if (!resolved) return;
+
+      const userId = resolved.user.id;
+
+      // Remove ws instance
+      const instances = wsInstances.get(userId);
+      if (instances) {
+        instances.delete(ws);
+        if (instances.size === 0) wsInstances.delete(userId);
+      }
+
+      // Remove connection tracking (use a placeholder since we don't store the exact object)
+      const connections = userConnections.get(userId);
+      if (connections) {
+        const entry = Array.from(connections).find(
+          (c) => c.userId === userId
+        );
+        if (entry) removeConnection(userId, entry);
+      }
+
+      await unsubscribeFromUserChannels(userId);
+
+      console.log(`🔌 Client disconnected: ${userId}`);
+    },
+
+    async message(ws, message) {
+      const { token } = ws.data.query;
+
+      const resolved = await resolveSession(token);
+      if (!resolved) {
+        ws.send(
+          JSON.stringify({ type: "error", code: 401, message: "Unauthorized" })
+        );
+        ws.close();
+        return;
+      }
+
+      console.log(`📨 Message from ${resolved.user.id}:`, message);
+
+      ws.send(
+        JSON.stringify({
+          type: "ack",
+          originalMessage: message,
+          timestamp: Date.now(),
+        })
+      );
+    },
+  })
+
+  .listen(env.WEBSOCKET_PORT);
+
+// ============================================================================
+// Broadcast job events from pub/sub to connected WebSocket clients
+// ============================================================================
+
+subscriber
+  .subscribeToJobEvents((channel, message: PubSubMessage) => {
+    if (isJobEventMessage(message)) {
+      broadcastToUser(message.userId, JSON.stringify({ channel, message }));
+    } else if (isNotificationMessage(message)) {
+      broadcastToUser(message.userId, JSON.stringify({ channel, message }));
+    }
+  })
+  .catch(console.error);
 
 console.log(
   `🔌 WebSocket server is running at ${app.server?.hostname}:${app.server?.port}`
@@ -260,4 +281,3 @@ process.on("SIGINT", async () => {
 });
 
 export type App = typeof app;
-
