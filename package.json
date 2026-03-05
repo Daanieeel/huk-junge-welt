@@ -3,14 +3,27 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "dev": "bun load-env.mjs run dev",
+    "dev:infra": "docker compose up -d",
+    "dev:infra:down": "docker compose down",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "check-types": "turbo run check-types",
+    "db:generate": "turbo run db:generate --filter=@repo/database",
+    "db:push": "turbo run db:push --filter=@repo/database",
+    "db:migrate": "turbo run db:migrate --filter=@repo/database",
+    "db:studio": "turbo run db:studio --filter=@repo/database",
+    "docker:up": "docker compose up -d"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
+    "@biomejs/biome": "^1.9.4",
+    "dotenv": "^16.4.5",
     "turbo": "^2.8.13",
+    "tsx": "^4.11.0",
     "typescript": "5.9.2"
   },
   "engines": {

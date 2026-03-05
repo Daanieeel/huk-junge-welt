@@ -1,0 +1,35 @@
+{
+  "name": "@repo/pub-sub",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./publisher": {
+      "types": "./src/publisher.ts",
+      "default": "./src/publisher.ts"
+    },
+    "./subscriber": {
+      "types": "./src/subscriber.ts",
+      "default": "./src/subscriber.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "default": "./src/types.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@repo/env": "workspace:*",
+    "ioredis": "^5.6.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5"
+  }
+}
