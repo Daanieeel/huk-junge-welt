@@ -1,31 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 import { signIn } from "@/lib/auth-client";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
-export default function SignInPage() {
+const HUK_LOGO =
+  "https://static.c.huk24.de/content/dam/huk24/web/allgemein/%C3%BCber-uns/HUK_Logo_gelb_nachtblau_RGB_800x800px.png";
+
+function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,81 +32,124 @@ export default function SignInPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const { error: authError } = await signIn.email({ email, password });
-
     setLoading(false);
-
     if (authError) {
-      setError(authError.message ?? "Sign in failed. Please try again.");
+      setError(authError.message ?? "Anmeldung fehlgeschlagen.");
       return;
     }
-
-    const redirect = searchParams.get("redirect") ?? "/";
-    router.push(redirect);
+    router.push(searchParams.get("redirect") ?? "/");
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Enter your credentials to continue</CardDescription>
-        </CardHeader>
+    <div
+      className="h-svh flex flex-col overflow-hidden bg-background"
+      style={{ WebkitTapHighlightColor: "transparent" }}
+    >
+      {/* ── Amber hero ── */}
+      <div
+        className="bg-primary relative shrink-0 flex flex-col justify-between px-6 pt-8 pb-8"
+        style={{ height: "42svh" }}
+      >
+        {/* Faint background shield */}
+        <div
+          className="absolute right-4 top-4 select-none pointer-events-none"
+          style={{ fontSize: 130, opacity: 0.12, lineHeight: 1 }}
+        >
+          🛡️
+        </div>
 
-        <CardContent>
-          <form id="sign-in-form" onSubmit={handleSubmit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </Field>
+        {/* Logo + app name */}
+        <div className="relative flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-white shadow-md shrink-0">
+            <Image src={HUK_LOGO} alt="HUK Logo" width={56} height={56} className="object-cover w-full h-full" />
+          </div>
+          <div className="flex flex-col justify-center">
+            <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-primary-foreground/50 leading-none mb-1">
+              HUK
+            </span>
+            <span className="text-[22px] font-black tracking-tight text-primary-foreground leading-none">
+              JUNGE WELT
+            </span>
+          </div>
+        </div>
 
-              <Field>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Field>
-
-              {error && <FieldError>{error}</FieldError>}
-            </FieldGroup>
-          </form>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-3">
-          <Button
-            type="submit"
-            form="sign-in-form"
-            size="lg"
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-
-          <p className="text-sm text-muted-foreground text-center">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up" className="text-primary-foreground underline underline-offset-4 hover:opacity-80">
-              Sign up
-            </Link>
+        {/* Page heading */}
+        <div className="relative">
+          <h1 className="text-[26px] font-bold text-primary-foreground leading-tight">
+            Willkommen zurück
+          </h1>
+          <p className="text-sm text-primary-foreground/60 mt-1 leading-snug">
+            Melde dich an, um deine Versicherungen zu verwalten.
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
+
+      {/* ── Form ── */}
+      <div className="flex-1 bg-background px-6 pt-6 pb-8 flex flex-col overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {/* Email */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email" className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+              E-Mail Adresse
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="deine@email.de"
+              className="h-10"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="password" className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
+              Passwort
+            </Label>
+            <InputGroup className="h-10">
+              <InputGroupInput
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton size="icon-sm" onClick={() => setShowPassword((v) => !v)}>
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" size="cta" disabled={loading} className="mt-1">
+            {loading ? "Einen Moment…" : <><span>Anmelden</span><ArrowRight /></>}
+          </Button>
+        </form>
+
+        <p className="mt-auto text-sm text-muted-foreground text-center">
+          Noch kein Konto?{" "}
+          <Link href="/sign-up" className="font-semibold text-foreground underline underline-offset-4">
+            Jetzt registrieren
+          </Link>
+        </p>
+      </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   );
 }

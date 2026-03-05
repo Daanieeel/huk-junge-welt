@@ -25,11 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="de" className={inter.variable}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 overflow-x-hidden`}
       >
-        {children}
+        <div className="min-h-svh w-full max-w-[430px] mx-auto bg-white overflow-hidden">
+          {children}
+        </div>
       </body>
     </html>
   );
