@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, CpuIcon, ShieldAlert } from "lucide-react";
+import { ArrowRight, CpuIcon, ShieldAlert, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScoreGauge } from "./score-gauge";
 
 interface ScoreSectionProps {
@@ -22,9 +25,29 @@ export function ScoreSection({
 }: ScoreSectionProps) {
   return (
     <div className="px-5 flex flex-col gap-2">
-      <p className="text-[10px] font-semibold uppercase text-muted-foreground text-center mb-6">
-        Dein Versicherungsschutz
-      </p>
+      <div className="flex items-center justify-center gap-1.5 mb-6">
+        <p className="text-[10px] font-semibold uppercase text-muted-foreground">
+          Dein Versicherungsschutz
+        </p>
+        <Popover>
+          <PopoverTrigger className="text-muted-foreground hover:text-muted-foreground transition-colors">
+            <Info className="size-3.5" />
+          </PopoverTrigger>
+          <PopoverContent side="bottom" className="w-72 text-[12px] leading-relaxed">
+            <p className="font-semibold text-foreground mb-1">Wie wird der Score berechnet?</p>
+            <p className="text-muted-foreground">
+              Der Score setzt sich aus zwei Faktoren zusammen:
+            </p>
+            <div className="bg-muted rounded-lg px-3 py-2 font-mono text-[11px] text-foreground">
+              Score = (Abdeckung × 70) + (Qualität × 30)
+            </div>
+            <ul className="text-muted-foreground flex flex-col gap-1.5">
+              <li><span className="font-semibold text-foreground">Abdeckung (70 %)</span> – Anteil der empfohlenen Versicherungsarten, die du bereits hast.</li>
+              <li><span className="font-semibold text-foreground">Qualität (30 %)</span> – Durchschnittlicher Qualitätsscore deiner bestehenden Verträge (KI-Analyse).</li>
+            </ul>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       <ScoreGauge score={score} isProcessing={isProcessing} />
 

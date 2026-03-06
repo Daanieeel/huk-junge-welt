@@ -4,7 +4,6 @@ import { useForm } from "@tanstack/react-form";
 import * as z from "zod";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { StepNavBar } from "./step-nav-bar";
 
 // ============================================================================
 // Data – mapped to the VehicleType Prisma enum
@@ -30,10 +29,9 @@ const schema = z.object({
 interface StepMobilityProps {
   defaultVehicleTypes: string[];
   onComplete: (data: { vehicleTypes: string[] }) => void;
-  onBack: () => void;
 }
 
-export function StepMobility({ defaultVehicleTypes, onComplete, onBack }: StepMobilityProps) {
+export function StepMobility({ defaultVehicleTypes, onComplete }: StepMobilityProps) {
   const form = useForm({
     defaultValues: { vehicleTypes: defaultVehicleTypes },
     validators: { onSubmit: schema },
@@ -41,14 +39,14 @@ export function StepMobility({ defaultVehicleTypes, onComplete, onBack }: StepMo
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <form
-        className="flex-1 overflow-y-auto px-5 py-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+    <form
+      id="step-form"
+      className="px-5 py-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
         <h3 className="text-[20px] font-bold text-foreground mb-1">Mobilität</h3>
         <p className="text-[13px] text-muted-foreground mb-6">
           Welche Fahrzeuge nutzt du? Mehrfachauswahl möglich.
@@ -143,9 +141,6 @@ export function StepMobility({ defaultVehicleTypes, onComplete, onBack }: StepMo
             );
           }}
         />
-      </form>
-
-      <StepNavBar onBack={onBack} onNext={() => form.handleSubmit()} />
-    </div>
+    </form>
   );
 }

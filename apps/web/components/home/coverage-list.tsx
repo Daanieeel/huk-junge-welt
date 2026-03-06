@@ -60,9 +60,52 @@ export function CoverageList({ items, hasQuestionnaire, standalone, hasNoData }:
     }
 
     // ── State 3: Show proposals ────────────────────────────────────────────────
+    const regularProposals = proposals.filter((i) => !i.isAlternative);
+    const alternatives = proposals.filter((i) => i.isAlternative);
+
     return (
       <div className="flex flex-col gap-2">
-        {proposals.map((item) => {
+        {/* Alternative / comparison cards */}
+        {alternatives.map((item) => {
+          const proposal = item.proposal!;
+          const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
+
+          return (
+            <Link
+              key={item.type}
+              href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+              className="bg-primary-2/5 rounded-2xl ring-1 ring-primary-2/20 px-4 py-3.5 flex items-center justify-between active:opacity-90 transition-opacity"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-[20px] leading-none shrink-0">
+                  {InsuranceTypeIcons[item.type] ?? "📋"}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground truncate">
+                    {InsuranceTypeLabels[item.type] ?? item.type}
+                  </p>
+                  <p className="text-[10px] font-semibold text-primary-2 mt-0.5">
+                    Wechsel-Empfehlung
+                    {item.savingsPerMonth !== null && item.savingsPerMonth > 0
+                      ? ` · ~${item.savingsPerMonth.toFixed(2).replace(".", ",")} € sparen`
+                      : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
+                <span className="text-[13px] font-bold text-primary-2 tabular-nums">
+                  ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+                </span>
+                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                  {intervalLabel}
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+
+        {/* Regular proposals */}
+        {regularProposals.map((item) => {
           const proposal = item.proposal!;
           const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
 

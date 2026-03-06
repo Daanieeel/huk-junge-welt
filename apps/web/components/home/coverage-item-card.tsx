@@ -2,8 +2,9 @@
 
 import type { CoverageItem } from "@/lib/api-client";
 import { InsuranceTypeLabels, InsuranceTypeIcons } from "@/lib/api-client";
-import { CheckCircle2, CircleDashed } from "lucide-react";
+import { CheckCircle2, CircleDashed, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CoverageItemCardProps {
   item: CoverageItem;
@@ -29,6 +30,14 @@ function CoverageQualityBar({ score }: { score: number }) {
         />
       ))}
       <span className="ml-1.5 text-[10px] font-medium text-muted-foreground">{score}%</span>
+      <Popover>
+        <PopoverTrigger className="ml-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+          <Info className="size-3" />
+        </PopoverTrigger>
+        <PopoverContent side="top" className="w-60 text-[12px] leading-relaxed">
+          Der <span className="font-semibold">Qualitätsscore (0–100)</span> zeigt, wie gut dein Vertrag dich absichert – bewertet anhand von Leistungsumfang, Deckungsgrenzen und Ausschlüssen.
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

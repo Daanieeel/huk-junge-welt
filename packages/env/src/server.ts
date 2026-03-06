@@ -31,6 +31,14 @@ export const serverEnvSchema = z.object({
   RAG_WEBHOOK_URL: z.string().url().optional(),
   RAG_WEBHOOK_AUTH: z.string().optional(),
 
+  // MinIO (S3-compatible object storage for insurance documents)
+  MINIO_ENDPOINT: z.string().default("localhost"),
+  MINIO_PORT: z.coerce.number().default(9000),
+  MINIO_USE_SSL: z.string().transform((v) => v === "true").default("false"),
+  MINIO_ACCESS_KEY: z.string().default("minioadmin"),
+  MINIO_SECRET_KEY: z.string().default("minioadmin"),
+  MINIO_BUCKET: z.string().default("huk-documents"),
+
   // Node environment
   NODE_ENV: z
     .enum(["development", "production", "test"])

@@ -6,7 +6,6 @@ import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldDescription } from "@/components/ui/field";
-import { StepNavBar } from "./step-nav-bar";
 
 // ============================================================================
 // Data
@@ -37,7 +36,6 @@ interface StepEmploymentProps {
   defaultJobExpiryDate: string | null;
   defaultSalary: string;
   onComplete: (data: { jobType: string; jobExpiryDate: string | null; salary: string }) => void;
-  onBack: () => void;
 }
 
 // Internal form values (jobExpiryDate is "" when empty, converted to null on submit)
@@ -48,7 +46,6 @@ export function StepEmployment({
   defaultJobExpiryDate,
   defaultSalary,
   onComplete,
-  onBack,
 }: StepEmploymentProps) {
   const [selectedJobType, setSelectedJobType] = useState(defaultJobType ?? "");
 
@@ -70,14 +67,14 @@ export function StepEmployment({
   const showExpiry = HAS_EXPIRY.includes(selectedJobType);
 
   return (
-    <div className="flex flex-col h-full">
-      <form
-        className="flex-1 overflow-y-auto px-5 py-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+    <form
+      id="step-form"
+      className="px-5 py-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
         <h3 className="text-[20px] font-bold text-foreground mb-1">Beruf & Gehalt</h3>
         <p className="text-[13px] text-muted-foreground mb-6">
           Was trifft auf dich aktuell zu?
@@ -186,9 +183,6 @@ export function StepEmployment({
             );
           }}
         />
-      </form>
-
-      <StepNavBar onBack={onBack} onNext={() => form.handleSubmit()} />
-    </div>
+    </form>
   );
 }

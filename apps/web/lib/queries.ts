@@ -3,6 +3,8 @@ import { homeApi, questionnaireApi, dashboardApi } from "./api-client";
 import { api } from "./eden";
 import { useProposalsStore } from "./proposals-store";
 
+const REST_URL = process.env.NEXT_PUBLIC_REST_URL ?? "http://localhost:3001";
+
 export const queryKeys = {
   home: ["home"] as const,
   dashboard: ["dashboard"] as const,
@@ -71,7 +73,8 @@ export function useInsurancesQuery() {
     queryFn: async () => {
       const { data, error } = await api.insurances.get();
       if (error) throw new Error("Failed to load insurances");
-      return data ?? [];
+      // Eden returns the response body as-is: { data: [...] }
+      return (data as unknown as { data: unknown[] })?.data ?? [];
     },
   });
 }
@@ -97,6 +100,76 @@ export function useAddInsurance() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.insurances });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useInsuranceQuery(id: string | null) {
+  return useQuery({
+    queryKey: ["insurance", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await fetch(`${REST_URL}/insurances/${id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load insurance");
+      return res.json();
+    },
+    enabled: !!id,
+  });
+}
+
+export function useDeleteInsurance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`${REST_URL}/insurances/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Fehler beim Löschen");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.insurances });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useUploadDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ insuranceId, file }: { insuranceId: string; file: File }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${REST_URL}/insurances/${insuranceId}/documents`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? "Upload fehlgeschlagen");
+      }
+      return res.json();
+    },
+    onSuccess: (_data, { insuranceId }) => {
+      queryClient.invalidateQueries({ queryKey: ["insurance", insuranceId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.insurances });
+    },
+  });
+}
+
+export function useDeleteDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ insuranceId, docId }: { insuranceId: string; docId: string }) => {
+      const res = await fetch(`${REST_URL}/insurances/${insuranceId}/documents/${docId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Fehler beim Löschen");
+    },
+    onSuccess: (_data, { insuranceId }) => {
+      queryClient.invalidateQueries({ queryKey: ["insurance", insuranceId] });
     },
   });
 }

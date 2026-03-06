@@ -5,7 +5,6 @@ import * as z from "zod";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FieldError } from "@/components/ui/field";
-import { StepNavBar } from "./step-nav-bar";
 
 // ============================================================================
 // Data
@@ -30,14 +29,12 @@ interface StepFamilyProps {
   defaultRelationshipStatus: string | null;
   defaultChildrenCount: number;
   onComplete: (data: { relationshipStatus: string; childrenCount: number }) => void;
-  onBack: () => void;
 }
 
 export function StepFamily({
   defaultRelationshipStatus,
   defaultChildrenCount,
   onComplete,
-  onBack,
 }: StepFamilyProps) {
   const form = useForm({
     defaultValues: {
@@ -49,14 +46,14 @@ export function StepFamily({
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <form
-        className="flex-1 overflow-y-auto px-5 py-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+    <form
+      id="step-form"
+      className="px-5 py-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
         <h3 className="text-[20px] font-bold text-foreground mb-1">Familienstand</h3>
         <p className="text-[13px] text-muted-foreground mb-6">
           Diese Angaben helfen uns, passende Versicherungen zu empfehlen.
@@ -153,9 +150,6 @@ export function StepFamily({
             )}
           />
         </div>
-      </form>
-
-      <StepNavBar onBack={onBack} onNext={() => form.handleSubmit()} />
-    </div>
+    </form>
   );
 }

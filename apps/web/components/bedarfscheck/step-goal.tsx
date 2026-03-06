@@ -4,7 +4,6 @@ import { useForm } from "@tanstack/react-form";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { FieldError } from "@/components/ui/field";
-import { StepNavBar } from "./step-nav-bar";
 
 // ============================================================================
 // Data – GoalType enum
@@ -42,11 +41,9 @@ const schema = z.object({
 interface StepGoalProps {
   defaultGoal: string | null;
   onComplete: (data: { goal: string }) => void;
-  onBack: () => void;
-  isLoading?: boolean;
 }
 
-export function StepGoal({ defaultGoal, onComplete, onBack, isLoading }: StepGoalProps) {
+export function StepGoal({ defaultGoal, onComplete }: StepGoalProps) {
   const form = useForm({
     defaultValues: { goal: defaultGoal ?? "" },
     validators: { onSubmit: schema },
@@ -54,14 +51,14 @@ export function StepGoal({ defaultGoal, onComplete, onBack, isLoading }: StepGoa
   });
 
   return (
-    <div className="flex flex-col h-full">
-      <form
-        className="flex-1 overflow-y-auto px-5 py-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          form.handleSubmit();
-        }}
-      >
+    <form
+      id="step-form"
+      className="px-5 py-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit();
+      }}
+    >
         <h3 className="text-[20px] font-bold text-foreground mb-1">Dein Absicherungsziel</h3>
         <p className="text-[13px] text-muted-foreground mb-6">
           Was ist dir bei deiner Versicherung am wichtigsten?
@@ -111,14 +108,6 @@ export function StepGoal({ defaultGoal, onComplete, onBack, isLoading }: StepGoa
             );
           }}
         />
-      </form>
-
-      <StepNavBar
-        onBack={onBack}
-        onNext={() => form.handleSubmit()}
-        isLastStep
-        isLoading={isLoading}
-      />
-    </div>
+    </form>
   );
 }

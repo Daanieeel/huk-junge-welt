@@ -243,16 +243,55 @@ function buildUserContext(params: {
     parts.push(`Mein Versicherungsziel: ${goalLabels[questionnaire.goal] ?? questionnaire.goal}.`);
   }
 
-  if (existingInsurances.length > 0) {
-    const insLines = existingInsurances.map(
+  // Separate existing insurances into "to compare" (overlap with targetTypes) and others
+  const comparableInsurances = existingInsurances.filter((ins) =>
+    targetTypes.includes(ins.type)
+  );
+  const otherInsurances = existingInsurances.filter((ins) =>
+    !targetTypes.includes(ins.type)
+  );
+
+  if (otherInsurances.length > 0) {
+    const insLines = otherInsurances.map(
       (ins) =>
         `${ins.type} bei ${ins.company} (${ins.rate} EUR / ${ins.interval}` +
         (ins.coverageScore !== null ? `, Qualitätsscore: ${ins.coverageScore}/100` : "") +
         ")"
     );
-    parts.push(`Ich habe bereits folgende Versicherungen: ${insLines.join("; ")}.`);
-  } else {
+    parts.push(`Ich habe bereits folgende Versicherungen (kein Vergleich nötig): ${insLines.join("; ")}.`);
+  }
+
+  if (comparableInsurances.length > 0) {
+    const insLines = comparableInsurances.map(
+      (ins) =>
+        `${ins.type} bei ${ins.company} für ${ins.rate} EUR / ${ins.interval}` +
+        (ins.coverageScore !== null ? ` (Qualitätsscore: ${ins.coverageScore}/100)` : "")
+    );
+    parts.push(
+      `Für folgende Versicherungsarten habe ich bereits einen Vertrag bei einem anderen Anbieter. ` +
+      `Bitte vergleiche direkt mit dem HUK-COBURG Angebot und empfehle nur dann eine Alternative, ` +
+      `wenn HUK-COBURG einen echten Mehrwert bietet. Nenne in action_suggestion konkret den möglichen Vorteil (z.B. Ersparnis in EUR/Monat oder bessere Leistungen). ` +
+      `Bestehende Verträge: ${insLines.join("; ")}.`
+    );
+  }
+
+  if (existingInsurances.length === 0) {
     parts.push("Ich habe noch keine Versicherungen.");
+  }
+
+  if (questionnaire.goal) {
+    const goalInstructions: Record<string, string> = {
+      CHEAPEST:
+        "WICHTIG: Mein oberstes Ziel ist der günstigste Preis. Empfehle eine Alternative zu einem bestehenden Vertrag NUR, wenn HUK-COBURG nachweislich günstiger ist. Wenn HUK teurer ist, lass diesen Typ aus den Empfehlungen weg.",
+      BEST_VALUE:
+        "Mein Ziel ist das beste Preis-Leistungs-Verhältnis. Empfehle Alternativen, wenn HUK entweder günstiger ist oder bei ähnlichem Preis deutlich bessere Leistungen bietet.",
+      COMPREHENSIVE:
+        "Mein Ziel ist umfassender Schutz. Empfehle Alternativen, wenn HUK besseren oder umfassenderen Schutz bietet, auch wenn der Preis etwas höher ist.",
+    };
+    const goalInstruction = goalInstructions[questionnaire.goal];
+    if (goalInstruction) {
+      parts.push(goalInstruction);
+    }
   }
 
   if (targetTypes.length > 0) {

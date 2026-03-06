@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { useBedarfscheckStore, TOTAL_STEPS, type BedarfscheckStep } from "@/lib/bedarfscheck-store";
-import { useSubmitQuestionnaire, usePutQuestionnaire } from "@/lib/queries";
+import { useSubmitQuestionnaire, usePutQuestionnaire, useQuestionnaireQuery } from "@/lib/queries";
 import { StepIndicator } from "./step-indicator";
+import { StepNavBar } from "./step-nav-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { IntroScreen } from "./intro-screen";
 import { StepPersonal } from "./step-personal";
 import { StepEmployment } from "./step-employment";
 import { StepMobility } from "./step-mobility";
-import { StepAddress } from "./step-address";
 import { StepFamily } from "./step-family";
 import { StepGoal } from "./step-goal";
 import { CompletionScreen } from "./completion-screen";
@@ -33,18 +35,36 @@ export function BedarfscheckScreen({
     updateFormData,
     markStepCompleted,
     goToPrevStep,
+    prefillFromQuestionnaire,
   } = useBedarfscheckStore();
 
   const postMutation = useSubmitQuestionnaire();
   const putMutation = usePutQuestionnaire();
   const submitMutation = hasExistingQuestionnaire ? putMutation : postMutation;
 
+  const { data: questionnaireData, isLoading: isLoadingQuestionnaire } = useQuestionnaireQuery();
+
+  // Auto-prefill when the user has existing questionnaire data and lands on the intro screen
+  useEffect(() => {
+    if (step === 0 && questionnaireData) {
+      prefillFromQuestionnaire(questionnaireData);
+    }
+  }, [step, questionnaireData, prefillFromQuestionnaire]);
+
   const goToStep = (s: BedarfscheckStep) => setStep(s);
   const DONE_STEP = (TOTAL_STEPS + 1) as BedarfscheckStep;
 
   // ── Step completion handlers ───────────────────────────────────────────────
 
-  const handleStep1 = (data: { dateOfBirth: string }) => {
+  const handleStep1 = (data: {
+    dateOfBirth: string;
+    streetName: string;
+    streetNumber: string;
+    zipcode: string;
+    city: string;
+    housingType: string;
+    housingOwnershipType: string | null;
+  }) => {
     updateFormData(data);
     markStepCompleted(1);
     goToStep(2);
@@ -67,28 +87,15 @@ export function BedarfscheckScreen({
   };
 
   const handleStep4 = (data: {
-    streetName: string;
-    streetNumber: string;
-    zipcode: string;
-    city: string;
-    housingType: string;
-    housingOwnershipType: string | null;
+    relationshipStatus: string;
+    childrenCount: number;
   }) => {
     updateFormData(data);
     markStepCompleted(4);
     goToStep(5);
   };
 
-  const handleStep5 = (data: {
-    relationshipStatus: string;
-    childrenCount: number;
-  }) => {
-    updateFormData(data);
-    markStepCompleted(5);
-    goToStep(6);
-  };
-
-  const handleStep6 = async (data: { goal: string }) => {
+  const handleStep5 = async (data: { goal: string }) => {
     const merged = { ...formData, ...data };
     updateFormData(data);
 
@@ -111,13 +118,25 @@ export function BedarfscheckScreen({
       goal: data.goal,
     });
 
-    markStepCompleted(6);
+    markStepCompleted(5);
     goToStep(DONE_STEP);
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (step === 0) {
+    // Show skeleton while we wait to see if there's existing data to prefill
+    if (hasExistingQuestionnaire && isLoadingQuestionnaire) {
+      return (
+        <div className="px-5 pt-6 flex flex-col gap-3">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-5 w-64" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-2xl" />
+          ))}
+        </div>
+      );
+    }
     return <IntroScreen userName={userName} onStart={() => goToStep(1)} />;
   }
 
@@ -129,74 +148,64 @@ export function BedarfscheckScreen({
     );
   }
 
-  const currentStep = step as 1 | 2 | 3 | 4 | 5 | 6;
+  const currentStep = step as 1 | 2 | 3 | 4 | 5;
 
   return (
-    <div className="h-full flex flex-col">
+    <div>
       {/* Step indicator header */}
       <div className="px-4 pt-4 pb-3">
-        <p className="text-[11px] text-muted-foreground mb-2.5">
-          Schritt {currentStep} von {TOTAL_STEPS}
-        </p>
         <StepIndicator currentStep={currentStep} completedSteps={completedSteps} />
       </div>
 
       {/* Step content */}
-      <div className="flex-1 min-h-0">
-        {currentStep === 1 && (
-          <StepPersonal
-            defaultDateOfBirth={formData.dateOfBirth}
-            onComplete={handleStep1}
-            onBack={goToPrevStep}
-          />
-        )}
-        {currentStep === 2 && (
-          <StepEmployment
-            defaultJobType={formData.jobType}
-            defaultJobExpiryDate={formData.jobExpiryDate}
-            defaultSalary={formData.salary}
-            onComplete={handleStep2}
-            onBack={goToPrevStep}
-          />
-        )}
-        {currentStep === 3 && (
-          <StepMobility
-            defaultVehicleTypes={formData.vehicleTypes}
-            onComplete={handleStep3}
-            onBack={goToPrevStep}
-          />
-        )}
-        {currentStep === 4 && (
-          <StepAddress
-            defaultValues={{
-              streetName: formData.streetName,
-              streetNumber: formData.streetNumber,
-              zipcode: formData.zipcode,
-              city: formData.city,
-              housingType: formData.housingType,
-              housingOwnershipType: formData.housingOwnershipType,
-            }}
-            onComplete={handleStep4}
-            onBack={goToPrevStep}
-          />
-        )}
-        {currentStep === 5 && (
-          <StepFamily
-            defaultRelationshipStatus={formData.relationshipStatus}
-            defaultChildrenCount={formData.childrenCount}
-            onComplete={handleStep5}
-            onBack={goToPrevStep}
-          />
-        )}
-        {currentStep === 6 && (
-          <StepGoal
-            defaultGoal={formData.goal}
-            onComplete={handleStep6}
-            onBack={goToPrevStep}
-            isLoading={submitMutation.isPending}
-          />
-        )}
-      </div>
+      {currentStep === 1 && (
+        <StepPersonal
+          defaultDateOfBirth={formData.dateOfBirth}
+          defaultValues={{
+            streetName: formData.streetName,
+            streetNumber: formData.streetNumber,
+            zipcode: formData.zipcode,
+            city: formData.city,
+            housingType: formData.housingType,
+            housingOwnershipType: formData.housingOwnershipType,
+          }}
+          onComplete={handleStep1}
+        />
+      )}
+      {currentStep === 2 && (
+        <StepEmployment
+          defaultJobType={formData.jobType}
+          defaultJobExpiryDate={formData.jobExpiryDate}
+          defaultSalary={formData.salary}
+          onComplete={handleStep2}
+        />
+      )}
+      {currentStep === 3 && (
+        <StepMobility
+          defaultVehicleTypes={formData.vehicleTypes}
+          onComplete={handleStep3}
+        />
+      )}
+      {currentStep === 4 && (
+        <StepFamily
+          defaultRelationshipStatus={formData.relationshipStatus}
+          defaultChildrenCount={formData.childrenCount}
+          onComplete={handleStep4}
+        />
+      )}
+      {currentStep === 5 && (
+        <StepGoal
+          defaultGoal={formData.goal}
+          onComplete={handleStep5}
+        />
+      )}
+
+      {/* Nav bar — sticky so it's always visible above bottom nav */}
+      <StepNavBar
+        onBack={currentStep > 1 ? goToPrevStep : undefined}
+        isLastStep={currentStep === TOTAL_STEPS}
+        isLoading={submitMutation.isPending}
+      />
     </div>
   );
 }

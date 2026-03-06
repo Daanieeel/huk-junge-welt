@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { QuestionnaireData } from "./api-client";
 
 // ============================================================================
 // Types
@@ -34,10 +35,10 @@ export type BedarfscheckFormData = {
   goal: string | null; // GoalType enum
 };
 
-/** 0 = intro, 1-6 = questionnaire steps, 7 = completed */
-export type BedarfscheckStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+/** 0 = intro, 1-5 = questionnaire steps, 6 = completed */
+export type BedarfscheckStep = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export const TOTAL_STEPS = 6;
+export const TOTAL_STEPS = 5;
 
 const INITIAL_FORM_DATA: BedarfscheckFormData = {
   dateOfBirth: "",
@@ -71,6 +72,7 @@ type BedarfscheckStore = {
   updateFormData: (data: Partial<BedarfscheckFormData>) => void;
   markStepCompleted: (step: number) => void;
   reset: () => void;
+  prefillFromQuestionnaire: (q: QuestionnaireData) => void;
 };
 
 export const useBedarfscheckStore = create<BedarfscheckStore>()(
@@ -106,6 +108,28 @@ export const useBedarfscheckStore = create<BedarfscheckStore>()(
 
       reset: () =>
         set({ step: 0, completedSteps: [], formData: INITIAL_FORM_DATA }),
+
+      prefillFromQuestionnaire: (q) =>
+        set({
+          step: 1,
+          completedSteps: [],
+          formData: {
+            dateOfBirth: q.dateOfBirth ? q.dateOfBirth.split("T")[0] : "",
+            jobType: q.jobType,
+            jobExpiryDate: q.jobExpiryDate ? q.jobExpiryDate.split("T")[0] : null,
+            salary: q.salary != null ? String(q.salary) : "",
+            vehicleTypes: q.vehicleTypes,
+            streetName: q.streetName ?? "",
+            streetNumber: q.streetNumber ?? "",
+            zipcode: q.zipcode ?? "",
+            city: q.city ?? "",
+            housingType: q.housingType ?? null,
+            housingOwnershipType: q.housingOwnershipType ?? null,
+            relationshipStatus: q.relationshipStatus,
+            childrenCount: q.childrenCount,
+            goal: q.goal ?? null,
+          },
+        }),
     }),
     { name: "bedarfscheck-progress" }
   )

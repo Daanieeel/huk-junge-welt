@@ -16,14 +16,14 @@ import {
 } from "@/components/ui/input-group";
 import { AppHeader } from "@/components/nav/app-header";
 
-const HUK_LOGO =
-  "https://static.c.huk24.de/content/dam/huk24/web/allgemein/%C3%BCber-uns/HUK_Logo_gelb_nachtblau_RGB_800x800px.png";
-
-const SMALL_TILES = [
-  { category: "Hausrat", name: "Inventar & Wertsachen", emoji: "🏠" },
-  { category: "Privat", name: "Familie & Haftpflicht", emoji: "🛡️" },
-  { category: "Berufsunfähigkeit", name: "Versicherung", emoji: "💼" },
-  { category: "Zahnzusatz", name: "Dental Plus", emoji: "🦷" },
+const BUBBLES = [
+  { emoji: "🚗", top: "18%", left: "6%",  size: "52px", delay: "0ms",   dur: "2.8s" },
+  { emoji: "✈️", top: "12%", left: "68%", size: "44px", delay: "400ms", dur: "3.2s" },
+  { emoji: "🏠", top: "52%", left: "4%",  size: "48px", delay: "700ms", dur: "2.5s" },
+  { emoji: "🦷", top: "60%", left: "72%", size: "44px", delay: "200ms", dur: "3.0s" },
+  { emoji: "💼", top: "30%", left: "78%", size: "40px", delay: "900ms", dur: "2.7s" },
+  { emoji: "🛵", top: "72%", left: "30%", size: "42px", delay: "500ms", dur: "3.4s" },
+  { emoji: "👨‍👩‍👧", top: "20%", left: "38%", size: "38px", delay: "1100ms", dur: "2.6s" },
 ];
 
 export default function SignUpPage() {
@@ -53,60 +53,44 @@ export default function SignUpPage() {
       className="h-svh flex flex-col overflow-hidden bg-background"
       style={{ WebkitTapHighlightColor: "transparent" }}
     >
-      {/* ── Mosaic hero ── */}
-      <div className="select-none shrink-0 flex flex-col" style={{ height: "42svh" }}>
+      {/* ── Hero ── */}
+      <div
+        className="select-none shrink-0 relative overflow-hidden"
+        style={{ height: "42svh", background: "linear-gradient(135deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, #000) 100%)" }}
+      >
+        {/* Decorative blobs */}
+        <div className="absolute -top-16 -right-16 size-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute -bottom-20 -left-20 size-64 rounded-full bg-black/20 blur-2xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-48 rounded-full bg-white/5 blur-xl" />
+
         <AppHeader />
 
-        {/* Tiles */}
-        <div className="flex-1 flex gap-2 px-2.5 pb-2.5">
-          {/* Left — tall tile */}
-          <div className="w-[45%] rounded-2xl overflow-hidden relative bg-primary shadow-sm">
-            <div
-              className="absolute inset-0 flex items-center justify-center opacity-70"
-              style={{ fontSize: 68 }}
-            >
-              🛵
-            </div>
-            <div
-              className="absolute bottom-0 left-0 right-0 p-2.5"
-              style={{
-                background: "linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 100%)",
-              }}
-            >
-              <p className="text-[9px] font-medium text-primary-foreground/60 mb-0.5">
-                Auto/Kfz/E-Roller
-              </p>
-              <p className="text-[12px] font-bold text-primary-foreground leading-tight">
-                Mobilitäts-
-                <br />
-                Schutz
-              </p>
-            </div>
-          </div>
-
-          {/* Right — 2×2 grid */}
-          <div className="flex-1 grid grid-cols-2 gap-2">
-            {SMALL_TILES.map((tile, i) => (
-              <div
-                key={tile.category}
-                className="rounded-xl overflow-hidden flex flex-col p-2 shadow-sm"
-                style={{
-                  background: `color-mix(in oklch, var(--primary) ${100 - i * 6}%, var(--muted))`,
-                }}
-              >
-                <p className="text-[8px] font-semibold leading-tight text-primary-foreground/50">
-                  {tile.category}
-                </p>
-                <div className="flex-1 flex items-center justify-center" style={{ fontSize: 22 }}>
-                  {tile.emoji}
-                </div>
-                <p className="text-[8px] font-bold leading-tight text-primary-foreground/80">
-                  {tile.name}
-                </p>
-              </div>
-            ))}
+        {/* Central shield */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="relative flex items-center justify-center">
+            <div className="absolute size-28 rounded-full bg-white/10 blur-lg" />
+            <span style={{ fontSize: 72, filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.3))" }}>🛡️</span>
           </div>
         </div>
+
+        {/* Floating emoji bubbles */}
+        {BUBBLES.map((b) => (
+          <div
+            key={b.emoji}
+            className="absolute flex items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm animate-bounce"
+            style={{
+              top: b.top,
+              left: b.left,
+              width: b.size,
+              height: b.size,
+              fontSize: `calc(${b.size} * 0.52)`,
+              animationDelay: b.delay,
+              animationDuration: b.dur,
+            }}
+          >
+            {b.emoji}
+          </div>
+        ))}
       </div>
 
       {/* ── Form ── */}

@@ -13,7 +13,7 @@ export const dashboard = new Elysia({ prefix: "/dashboard" })
   .get(
     "/",
     async ({ user }) => {
-      const [insurances, proposals, questionnaire, lastProposalJob] = await Promise.all([
+      const [insurances, proposals, questionnaire, lastProposalJob, activeJobs] = await Promise.all([
         prisma.insurance.findMany({ where: { userId: user.id } }),
         prisma.proposal.findMany({
           where: { userId: user.id },
@@ -29,10 +29,30 @@ export const dashboard = new Elysia({ prefix: "/dashboard" })
           orderBy: { completedAt: "desc" },
           select: { status: true },
         }),
+        // Active (pending/processing) proposal jobs so we can surface per-type loading state
+        prisma.job.findMany({
+          where: {
+            userId: user.id,
+            type: "generate-proposals",
+            status: { in: [JobStatus.PENDING, JobStatus.PROCESSING] },
+          },
+          select: { payload: true },
+        }),
       ]);
 
+      // Extract which insurance types are currently being processed
+      const processingTypes: string[] = [];
+      for (const job of activeJobs) {
+        const payload = job.payload as { insuranceTypes?: string[] };
+        if (Array.isArray(payload?.insuranceTypes) && payload.insuranceTypes.length > 0) {
+          for (const t of payload.insuranceTypes) {
+            if (!processingTypes.includes(t)) processingTypes.push(t);
+          }
+        }
+      }
+
       const recommendedTypes = deriveRecommendedTypes(questionnaire);
-      const items = buildCoverageItems(insurances, proposals, recommendedTypes);
+      const items = buildCoverageItems(insurances, proposals, recommendedTypes, questionnaire?.goal ?? null);
       const score = computeInsuranceScore(insurances, items);
       const coveredCount = items.filter((i) => i.status === "covered").length;
 
@@ -45,6 +65,7 @@ export const dashboard = new Elysia({ prefix: "/dashboard" })
           totalCovered: coveredCount,
           hasQuestionnaire: questionnaire !== null,
           hasCompletedProposalJob: lastProposalJob !== null,
+          processingTypes,
           items,
         },
       };

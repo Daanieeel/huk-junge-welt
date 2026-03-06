@@ -17,6 +17,10 @@ export type CoverageItem = {
   status: CoverageStatus;
   coverageScore: number | null;
   insurance: { id: string; company: string; rate: string; interval: string } | null;
+  /**
+   * For "recommended" items: the HUK proposal.
+   * For "covered" items: an alternative HUK proposal (when isAlternative === true).
+   */
   proposal: {
     id: string;
     company: string;
@@ -25,6 +29,10 @@ export type CoverageItem = {
     priority: number | null;
     reason: string | null;
   } | null;
+  /** True when the user already has this insurance AND there is a goal-relevant HUK alternative. */
+  isAlternative: boolean;
+  /** Monthly savings if switching to the HUK proposal (positive = user saves money). Null when not applicable. */
+  savingsPerMonth: number | null;
 };
 
 // ============================================================================
@@ -62,51 +70,46 @@ export function deriveRecommendedTypes(questionnaire: Questionnaire | null): Ins
     types.push(InsuranceType.PFLEGE);
   }
 
-  const ageMs = Date.now() - new Date(questionnaire.dateOfBirth).getTime();
-  const age = Math.floor(ageMs / (1000 * 60 * 60 * 24 * 365));
   types.push(InsuranceType.AUSLANDS_KRANKEN);
 
   return [...new Set(types)];
 }
 
-export function buildInsuranceItem(type: InsuranceType, insurance: Insurance): CoverageItem {
-  return {
-    type,
-    status: "covered",
-    coverageScore: insurance.coverageScore ?? null,
-    insurance: {
-      id: insurance.id,
-      company: insurance.company,
-      rate: insurance.rate.toString(),
-      interval: insurance.interval,
-    },
-    proposal: null,
-  };
-}
+/**
+ * Determines whether a HUK proposal should be shown as a goal-relevant alternative
+ * to the user's existing insurance.
+ *
+ * Rules by goal:
+ *  CHEAPEST      → only show if HUK is strictly cheaper
+ *  BEST_VALUE    → only show if HUK is cheaper or at most 5 % more expensive
+ *  COMPREHENSIVE → show as long as a proposal exists (coverage is the priority)
+ *  null          → same as BEST_VALUE
+ */
+function shouldShowAlternative(
+  insurance: Insurance,
+  proposal: Proposal,
+  goal: string | null
+): boolean {
+  const proposalRate = Number(proposal.rate);
+  const insuranceRate = Number(insurance.rate);
 
-export function buildProposalItem(type: InsuranceType, proposal: Proposal | null): CoverageItem {
-  return {
-    type,
-    status: proposal ? "recommended" : "not_covered",
-    coverageScore: null,
-    insurance: null,
-    proposal: proposal
-      ? {
-          id: proposal.id,
-          company: proposal.company,
-          rate: proposal.rate.toString(),
-          interval: proposal.interval,
-          priority: proposal.priority ?? null,
-          reason: proposal.reason ?? null,
-        }
-      : null,
-  };
+  if (goal === "CHEAPEST") {
+    return proposalRate < insuranceRate;
+  }
+
+  if (goal === "COMPREHENSIVE") {
+    return true;
+  }
+
+  // BEST_VALUE or no goal: only worthwhile if HUK isn't significantly more expensive
+  return proposalRate <= insuranceRate * 1.05;
 }
 
 export function buildCoverageItems(
   insurances: Insurance[],
   proposals: Proposal[],
-  recommendedTypes: InsuranceType[]
+  recommendedTypes: InsuranceType[],
+  goal: string | null = null
 ): CoverageItem[] {
   const seenTypes = new Set<string>();
   const items: CoverageItem[] = [];
@@ -115,12 +118,95 @@ export function buildCoverageItems(
     seenTypes.add(type);
     const insurance = insurances.find((i: Insurance) => i.type === type) ?? null;
     const proposal = proposals.find((p: Proposal) => p.type === type) ?? null;
-    items.push(insurance ? buildInsuranceItem(type, insurance) : buildProposalItem(type, proposal));
+
+    if (insurance) {
+      const isAlternative = proposal !== null && shouldShowAlternative(insurance, proposal, goal);
+      const savingsPerMonth =
+        isAlternative && proposal
+          ? Math.round((Number(insurance.rate) - Number(proposal.rate)) * 100) / 100
+          : null;
+
+      items.push({
+        type,
+        status: "covered",
+        coverageScore: insurance.coverageScore ?? null,
+        insurance: {
+          id: insurance.id,
+          company: insurance.company,
+          rate: insurance.rate.toString(),
+          interval: insurance.interval,
+        },
+        proposal:
+          isAlternative && proposal
+            ? {
+                id: proposal.id,
+                company: proposal.company,
+                rate: proposal.rate.toString(),
+                interval: proposal.interval,
+                priority: proposal.priority ?? null,
+                reason: proposal.reason ?? null,
+              }
+            : null,
+        isAlternative,
+        savingsPerMonth,
+      });
+    } else {
+      items.push({
+        type,
+        status: proposal ? "recommended" : "not_covered",
+        coverageScore: null,
+        insurance: null,
+        proposal: proposal
+          ? {
+              id: proposal.id,
+              company: proposal.company,
+              rate: proposal.rate.toString(),
+              interval: proposal.interval,
+              priority: proposal.priority ?? null,
+              reason: proposal.reason ?? null,
+            }
+          : null,
+        isAlternative: false,
+        savingsPerMonth: null,
+      });
+    }
   }
 
+  // Include any insurances for types that were not in the recommended list
   for (const insurance of insurances) {
     if (!seenTypes.has(insurance.type)) {
-      items.push(buildInsuranceItem(insurance.type as InsuranceType, insurance));
+      const proposal = proposals.find((p: Proposal) => p.type === insurance.type) ?? null;
+      const isAlternative =
+        proposal !== null && shouldShowAlternative(insurance, proposal, goal);
+      const savingsPerMonth =
+        isAlternative && proposal
+          ? Math.round((Number(insurance.rate) - Number(proposal.rate)) * 100) / 100
+          : null;
+
+      items.push({
+        type: insurance.type,
+        status: "covered",
+        coverageScore: insurance.coverageScore ?? null,
+        insurance: {
+          id: insurance.id,
+          company: insurance.company,
+          rate: insurance.rate.toString(),
+          interval: insurance.interval,
+        },
+        proposal:
+          isAlternative && proposal
+            ? {
+                id: proposal.id,
+                company: proposal.company,
+                rate: proposal.rate.toString(),
+                interval: proposal.interval,
+                priority: proposal.priority ?? null,
+                reason: proposal.reason ?? null,
+              }
+            : null,
+        isAlternative,
+        savingsPerMonth,
+      });
     }
   }
 

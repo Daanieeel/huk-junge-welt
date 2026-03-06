@@ -280,6 +280,8 @@ export const CoverageItemSchema = z.object({
       reason: z.string().nullable(),
     })
     .nullable(),
+  isAlternative: z.boolean(),
+  savingsPerMonth: z.number().nullable(),
 });
 
 export type CoverageItem = z.infer<typeof CoverageItemSchema>;
@@ -292,6 +294,7 @@ export const DashboardSchema = z.object({
   totalCovered: z.number(),
   hasQuestionnaire: z.boolean(),
   hasCompletedProposalJob: z.boolean(),
+  processingTypes: z.array(z.string()).default([]),
   items: z.array(CoverageItemSchema),
 });
 
@@ -343,12 +346,20 @@ export const homeApi = {
 
 export const QuestionnaireSchema = z.object({
   id: z.string(),
-  name: z.string(),
   dateOfBirth: z.string(),
   jobType: z.string(),
+  jobExpiryDate: z.string().nullable().optional(),
+  salary: z.number().nullable().optional(),
   vehicleTypes: z.array(z.string()),
+  streetName: z.string().nullable().optional(),
+  streetNumber: z.string().nullable().optional(),
+  zipcode: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  housingType: z.string().nullable().optional(),
+  housingOwnershipType: z.string().nullable().optional(),
   relationshipStatus: z.string(),
   childrenCount: z.number(),
+  goal: z.string().nullable().optional(),
   userId: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -5,14 +5,13 @@ import { cn } from "@/lib/utils";
 
 interface StepNavBarProps {
   onBack?: () => void;
-  onNext: () => void;
   isLastStep?: boolean;
   isLoading?: boolean;
 }
 
-export function StepNavBar({ onBack, onNext, isLastStep, isLoading }: StepNavBarProps) {
+export function StepNavBar({ onBack, isLastStep, isLoading }: StepNavBarProps) {
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-border/60 bg-background">
+    <div className="sticky bottom-0 flex items-center justify-between px-5 py-4 border-t border-border/60 bg-background">
       <button
         type="button"
         onClick={onBack}
@@ -27,10 +26,10 @@ export function StepNavBar({ onBack, onNext, isLastStep, isLoading }: StepNavBar
       </button>
 
       <button
-        type="button"
-        onClick={onNext}
+        type="submit"
+        form="step-form"
         disabled={isLoading}
-        className="flex items-center gap-1.5 text-[15px] font-semibold text-primary active:opacity-60 disabled:opacity-50 transition-opacity"
+        className="flex items-center gap-1.5 text-[15px] font-semibold text-primary-foreground active:opacity-60 disabled:opacity-50 transition-opacity"
       >
         {isLoading ? (
           <>
