@@ -32,6 +32,7 @@ export const proposals = new Elysia({ prefix: "/proposals" })
         return { error: "Kein Fragebogen vorhanden. Bitte zuerst den Bedarfscheck abschließen." };
       }
 
+      await prisma.proposal.deleteMany({ where: { userId: user.id } });
       await dispatchGenerateProposals({ userId: user.id });
       return { success: true };
     },

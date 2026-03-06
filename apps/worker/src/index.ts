@@ -26,6 +26,7 @@ interface RagRecommendation {
   company: string;
   rate: number;
   interval: string;
+  priority?: number;
   key_benefits: string[];
   summary: string;
   action_suggestion: string;
@@ -282,11 +283,11 @@ function buildUserContext(params: {
   if (questionnaire.goal) {
     const goalInstructions: Record<string, string> = {
       CHEAPEST:
-        "WICHTIG: Mein oberstes Ziel ist der günstigste Preis. Empfehle eine Alternative zu einem bestehenden Vertrag NUR, wenn HUK-COBURG nachweislich günstiger ist. Wenn HUK teurer ist, lass diesen Typ aus den Empfehlungen weg.",
+        "WICHTIG: Mein oberstes Ziel ist der günstigste Preis. Empfehle eine Alternative zu einem bestehenden Vertrag NUR, wenn HUK-COBURG nachweislich günstiger ist. Wenn HUK teurer ist, lass diesen Typ weg. Vergib priority 1–2 NUR für gesetzlich notwendige oder existenziell wichtige Versicherungen (z.B. Privathaftpflicht, KFZ bei eigenem Fahrzeug). Alles andere bekommt priority 4–5. Lass Typen mit priority 5 ganz weg, um Überversicherung zu vermeiden.",
       BEST_VALUE:
-        "Mein Ziel ist das beste Preis-Leistungs-Verhältnis. Empfehle Alternativen, wenn HUK entweder günstiger ist oder bei ähnlichem Preis deutlich bessere Leistungen bietet.",
+        "Mein Ziel ist das beste Preis-Leistungs-Verhältnis. Empfehle Alternativen, wenn HUK entweder günstiger ist oder bei ähnlichem Preis deutlich bessere Leistungen bietet. Vergib priority 1–2 für Kernabsicherungen, die klar zu meiner Lebenssituation passen. Nützliche Ergänzungen erhalten priority 3–4.",
       COMPREHENSIVE:
-        "Mein Ziel ist umfassender Schutz. Empfehle Alternativen, wenn HUK besseren oder umfassenderen Schutz bietet, auch wenn der Preis etwas höher ist.",
+        "Mein Ziel ist umfassender Schutz. Empfehle Alternativen auch bei etwas höherem Preis, wenn HUK besseren Schutz bietet. Vergib priority 1–2 großzügiger für alle Versicherungen, die relevante Lücken schließen. Ergänzende Produkte erhalten priority 3–4.",
     };
     const goalInstruction = goalInstructions[questionnaire.goal];
     if (goalInstruction) {
@@ -401,9 +402,12 @@ async function handleGenerateProposals(
         continue;
       }
 
-      // Derive priority from array position (1-based, max 5)
+      // Use AI-assigned priority; fall back to array position if missing
       const position = recommendations.indexOf(rec);
-      const priority = Math.min(position + 1, 5);
+      const priority =
+        typeof rec.priority === "number" && rec.priority >= 1 && rec.priority <= 5
+          ? Math.round(rec.priority)
+          : Math.min(position + 1, 5);
 
       await prisma.proposal.upsert({
         where: {

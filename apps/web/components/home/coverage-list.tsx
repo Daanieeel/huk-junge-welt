@@ -40,7 +40,7 @@ export function CoverageList({ items, hasQuestionnaire, standalone, hasNoData }:
           </p>
           <Link
             href="/bedarfscheck"
-            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary"
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary-foreground"
           >
             Jetzt starten
             <ArrowRight className="size-3.5" />
@@ -62,86 +62,132 @@ export function CoverageList({ items, hasQuestionnaire, standalone, hasNoData }:
     // ── State 3: Show proposals ────────────────────────────────────────────────
     const regularProposals = proposals.filter((i) => !i.isAlternative);
     const alternatives = proposals.filter((i) => i.isAlternative);
+    const importantProposals = regularProposals.filter((i) => (i.proposal!.priority ?? 3) <= 2);
+    const optionalProposals = regularProposals.filter((i) => (i.proposal!.priority ?? 3) >= 3);
 
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         {/* Alternative / comparison cards */}
-        {alternatives.map((item) => {
-          const proposal = item.proposal!;
-          const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
+        {alternatives.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {alternatives.map((item) => {
+              const proposal = item.proposal!;
+              const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
+              return (
+                <Link
+                  key={item.type}
+                  href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+                  className="bg-primary-2/5 rounded-2xl ring-1 ring-primary-2/20 px-4 py-3.5 flex items-center justify-between active:opacity-90 transition-opacity"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[20px] leading-none shrink-0">
+                      {InsuranceTypeIcons[item.type] ?? "📋"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">
+                        {InsuranceTypeLabels[item.type] ?? item.type}
+                      </p>
+                      <p className="text-[10px] font-semibold text-primary-2 mt-0.5">
+                        Wechsel-Empfehlung
+                        {item.savingsPerMonth !== null && item.savingsPerMonth > 0
+                          ? ` · ~${item.savingsPerMonth.toFixed(2).replace(".", ",")} € sparen`
+                          : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
+                    <span className="text-[13px] font-bold text-primary-2 tabular-nums">
+                      ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+                    </span>
+                    <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                      {intervalLabel}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-          return (
-            <Link
-              key={item.type}
-              href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
-              className="bg-primary-2/5 rounded-2xl ring-1 ring-primary-2/20 px-4 py-3.5 flex items-center justify-between active:opacity-90 transition-opacity"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-[20px] leading-none shrink-0">
-                  {InsuranceTypeIcons[item.type] ?? "📋"}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-foreground truncate">
-                    {InsuranceTypeLabels[item.type] ?? item.type}
-                  </p>
-                  <p className="text-[10px] font-semibold text-primary-2 mt-0.5">
-                    Wechsel-Empfehlung
-                    {item.savingsPerMonth !== null && item.savingsPerMonth > 0
-                      ? ` · ~${item.savingsPerMonth.toFixed(2).replace(".", ",")} € sparen`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
-                <span className="text-[13px] font-bold text-primary-2 tabular-nums">
-                  ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
-                </span>
-                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
-                  {intervalLabel}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
+        {/* Important proposals */}
+        {importantProposals.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {(alternatives.length > 0 || optionalProposals.length > 0) && (
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-foreground px-1">
+                Wichtig für dich
+              </p>
+            )}
+            {importantProposals.map((item) => {
+              const proposal = item.proposal!;
+              const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
+              return (
+                <Link
+                  key={item.type}
+                  href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+                  className="bg-card rounded-2xl px-4 py-3.5 ring-1 ring-foreground/8 flex items-center justify-between active:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[20px] leading-none shrink-0">
+                      {InsuranceTypeIcons[item.type] ?? "📋"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground truncate">
+                        {InsuranceTypeLabels[item.type] ?? item.type}
+                      </p>
+                      {proposal.reason && (
+                        <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 mt-0.5">
+                          {proposal.reason}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
+                    <span className="text-[13px] font-bold text-foreground tabular-nums">
+                      ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+                    </span>
+                    <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                      {intervalLabel}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
 
-        {/* Regular proposals */}
-        {regularProposals.map((item) => {
-          const proposal = item.proposal!;
-          const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
-
-          return (
-            <Link
-              key={item.type}
-              href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
-              className="bg-card rounded-2xl px-4 py-3.5 ring-1 ring-foreground/8 flex items-center justify-between active:bg-muted transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="text-[20px] leading-none shrink-0">
-                  {InsuranceTypeIcons[item.type] ?? "📋"}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-foreground truncate">
-                    {InsuranceTypeLabels[item.type] ?? item.type}
-                  </p>
-                  {proposal.reason && (
-                    <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 mt-0.5">
-                      {proposal.reason}
+        {/* Optional proposals */}
+        {optionalProposals.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground px-1">
+              Könnte sich lohnen
+            </p>
+            {optionalProposals.map((item) => {
+              const proposal = item.proposal!;
+              return (
+                <Link
+                  key={item.type}
+                  href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+                  className="bg-background rounded-xl px-4 py-3 border border-dashed border-border flex items-center justify-between active:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-[18px] leading-none shrink-0 opacity-50">
+                      {InsuranceTypeIcons[item.type] ?? "📋"}
+                    </span>
+                    <p className="text-[13px] font-medium text-muted-foreground truncate">
+                      {InsuranceTypeLabels[item.type] ?? item.type}
                     </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
-                <span className="text-[13px] font-bold text-foreground tabular-nums">
-                  ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
-                </span>
-                <span className="text-[9px] text-muted-foreground whitespace-nowrap">
-                  {intervalLabel}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 ml-3">
+                    <span className="text-[12px] text-muted-foreground tabular-nums">
+                      ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+                    </span>
+                    <ArrowRight className="size-3.5 text-muted-foreground/50" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   })();

@@ -97,8 +97,8 @@ function broadcastToUser(userId: string, data: string): void {
 
 async function subscribeToUserChannels(userId: string): Promise<void> {
   if (!subscriber.isSubscribedToUser(userId)) {
-    await subscriber.subscribeToUser(userId, (_channel, _message) => {
-      // handled via job-events subscription below
+    await subscriber.subscribeToUser(userId, (channel, message) => {
+      broadcastToUser(userId, JSON.stringify({ channel, message }));
     });
     console.log(`📡 Subscribed to channels for user: ${userId}`);
   }

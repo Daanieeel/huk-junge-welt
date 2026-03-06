@@ -73,6 +73,10 @@ export const insurances = new Elysia({ prefix: "/insurances" })
         },
       });
 
+      // Delete any stale proposal for this type so the UI doesn't show outdated
+      // pricing while the new comparison job is running.
+      await prisma.proposal.deleteMany({ where: { userId: user.id, type } });
+
       // Trigger a targeted proposal re-generation for this specific insurance type.
       await dispatchGenerateProposals({ userId: user.id, insuranceTypes: [type] });
 

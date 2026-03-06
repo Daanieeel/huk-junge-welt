@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, TrendingDown, Sparkles, Loader2, Siren } from "lucide-react";
+import { ArrowRight, TrendingDown, Sparkles, Loader2, Siren, ChevronDown } from "lucide-react";
 import { useDashboardQuery } from "@/lib/queries";
 import { InsuranceTypeLabels, InsuranceTypeIcons, type CoverageItem } from "@/lib/api-client";
 import { typeToSlug } from "@/lib/insurance-content";
@@ -19,9 +19,35 @@ const INTERVAL_LABELS: Record<string, string> = {
   WEEKLY: "/ Woche",
 };
 
-function ProposalCard({ item }: { item: CoverageItem }) {
+function ProposalCard({ item, dimmed = false }: { item: CoverageItem; dimmed?: boolean }) {
   const proposal = item.proposal!;
   const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
+
+  if (dimmed) {
+    return (
+      <Link
+        href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+        className="bg-background rounded-xl px-4 py-3 border border-dashed border-border flex items-center justify-between active:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-[18px] leading-none shrink-0 opacity-50">
+            {InsuranceTypeIcons[item.type] ?? "📋"}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-muted-foreground truncate">
+              {InsuranceTypeLabels[item.type] ?? item.type}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0 ml-3">
+          <span className="text-[12px] text-muted-foreground tabular-nums">
+            ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+          </span>
+          <ArrowRight className="size-3.5 text-muted-foreground/50" />
+        </div>
+      </Link>
+    );
+  }
 
   return (
     <Link
@@ -37,7 +63,7 @@ function ProposalCard({ item }: { item: CoverageItem }) {
             {InsuranceTypeLabels[item.type] ?? item.type}
           </p>
           {proposal.reason && (
-            <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1 mt-0.5">
+            <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
               {proposal.reason}
             </p>
           )}
@@ -164,6 +190,10 @@ export function ProposalsScreen() {
     (i) => i.status === "recommended" && i.proposal !== null && !processingTypes.includes(i.type)
   );
 
+  // Split by priority: 1–2 = important, 3+ = optional
+  const importantProposals = regularProposals.filter((i) => (i.proposal!.priority ?? 3) <= 2);
+  const optionalProposals = regularProposals.filter((i) => (i.proposal!.priority ?? 3) >= 3);
+
   // Alternative proposals: covered items with a goal-relevant HUK alternative
   const alternatives = data.items.filter((i) => i.status === "covered" && i.isAlternative);
 
@@ -180,7 +210,7 @@ export function ProposalsScreen() {
         <h2 className="text-[24px] font-bold text-foreground leading-tight mb-0.5">Empfehlungen</h2>
         <p className="text-[13px] text-muted-foreground">
           {hasAny
-            ? `${regularProposals.length + alternatives.length} personalisierte Empfehlungen für dich`
+            ? `${importantProposals.length} wichtige · ${optionalProposals.length + alternatives.length} weitere Empfehlungen`
             : "Deine persönlichen Versicherungsempfehlungen"}
         </p>
       </div>
@@ -236,20 +266,35 @@ export function ProposalsScreen() {
           </div>
         )}
 
-        {/* Regular proposals section */}
-        {regularProposals.length > 0 && (
+        {/* Important proposals */}
+        {importantProposals.length > 0 && (
           <div>
-            {alternatives.length > 0 && (
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="size-4 text-muted-foreground" />
-                <p className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Neue Empfehlungen
-                </p>
-              </div>
-            )}
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="size-4 text-foreground" />
+              <p className="text-[12px] font-semibold uppercase tracking-widest text-foreground">
+                Wichtig für dich
+              </p>
+            </div>
             <div className="flex flex-col gap-2">
-              {regularProposals.map((item) => (
+              {importantProposals.map((item) => (
                 <ProposalCard key={item.type} item={item} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Optional proposals */}
+        {optionalProposals.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <ChevronDown className="size-4 text-muted-foreground" />
+              <p className="text-[12px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Könnte sich lohnen
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {optionalProposals.map((item) => (
+                <ProposalCard key={item.type} item={item} dimmed />
               ))}
             </div>
           </div>
@@ -283,7 +328,7 @@ export function ProposalsScreen() {
                 </p>
                 <Link
                   href="/bedarfscheck"
-                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary-foreground"
                 >
                   Jetzt starten
                   <ArrowRight className="size-3.5" />

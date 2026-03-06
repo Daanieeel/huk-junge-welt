@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { LogOut, RefreshCw, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
+import { clearAllData } from "@/lib/db";
 import { useBedarfscheckStore } from "@/lib/bedarfscheck-store";
 import { useRegenerateProposals, useQuestionnaireQuery } from "@/lib/queries";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -21,6 +22,7 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
   const { data: questionnaireData } = useQuestionnaireQuery();
 
   async function handleSignOut() {
+    await clearAllData();
     await signOut();
     router.push("/sign-in");
     router.refresh();

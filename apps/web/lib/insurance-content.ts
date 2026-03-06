@@ -52,7 +52,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Beruflich verursachte Schäden (benötigt Berufshaftpflicht)",
       "Schäden beim Führen von Booten oder Schiffen (separate Versicherung)",
     ],
-    applyUrl: "https://www.huk.de/privathaftpflichtversicherung",
+    applyUrl: "https://www.huk.de/haus-haftung-recht/haftpflichtversicherung/private-haftpflichtversicherung.html",
   },
 
   HAUSRAT: {
@@ -84,7 +84,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Schäden durch Kriegs- oder Katastrophenereignisse",
       "Kfz, Anhänger und Wasserfahrzeuge",
     ],
-    applyUrl: "https://www.huk.de/hausratversicherung",
+    applyUrl: "https://www.huk.de/haus-haftung-recht/haus-wohnung/hausratversicherung.html",
   },
 
   KFZ: {
@@ -116,7 +116,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Schäden durch normale Abnutzung",
       "Fahrten ohne gültigen Führerschein",
     ],
-    applyUrl: "https://www.huk.de/kfz-versicherung",
+    applyUrl: "https://www.huk.de/fahrzeuge/kfz-versicherung/autoversicherung.html",
   },
 
   BERUFSUNFAEHIGKEIT: {
@@ -147,7 +147,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Berufsunfähigkeit unter 50 % Einschränkung (Standardtarife)",
       "Berufsunfähigkeit durch Kriegshandlungen",
     ],
-    applyUrl: "https://www.huk.de/berufsunfaehigkeitsversicherung",
+    applyUrl: "https://www.huk.de/gesundheit-vorsorge-vermoegen/existenzsicherung/berufsunfaehigkeitsversicherung.html",
   },
 
   ZAHNZUSATZ: {
@@ -175,7 +175,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Reine Schönheitsbehandlungen ohne medizinische Notwendigkeit",
       "Wartezeitvorbehalt in den ersten Monaten (je nach Tarif)",
     ],
-    applyUrl: "https://www.huk.de/zahnzusatzversicherung",
+    applyUrl: "https://www.huk.de/gesundheit-vorsorge-vermoegen/krankenversicherung/krankenzusatzversicherung/zahnzusatzversicherung.html",
   },
 
   PFLEGE: {
@@ -203,7 +203,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Pflegegrad 1 (je nach Tarif nicht oder eingeschränkt)",
       "Kosten, die durch Eigenverantwortung entstehen",
     ],
-    applyUrl: "https://www.huk.de/pflegeversicherung",
+    applyUrl: "https://www.huk.de/gesundheit-vorsorge-vermoegen/pflegeversicherung/pflegetagegeldversicherung.html",
   },
 
   UNFALL: {
@@ -234,7 +234,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Bestimmte Extremsportarten ohne Zusatzvereinbarung",
       "Reine Sachschäden",
     ],
-    applyUrl: "https://www.huk.de/unfallversicherung",
+    applyUrl: "https://www.huk.de/gesundheit-vorsorge-vermoegen/existenzsicherung/unfallversicherung.html",
   },
 
   RECHTSSCHUTZ: {
@@ -266,7 +266,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Streitigkeiten zwischen mitversicherten Personen",
       "Bußgeldverfahren (je nach Tarif)",
     ],
-    applyUrl: "https://www.huk.de/rechtsschutzversicherung",
+    applyUrl: "https://www.huk.de/haus-haftung-recht/rechtsschutzversicherung/privatrechtsschutz.html",
   },
 
   AUSLANDS_KRANKEN: {
@@ -297,7 +297,7 @@ export const INSURANCE_CONTENT: Record<string, InsuranceTypeContent> = {
       "Langzeitaufenthalte über 6 Monate ohne Sondertarif",
       "Behandlungen, die bis zur Rückkehr warten konnten",
     ],
-    applyUrl: "https://www.huk.de/auslandskrankenversicherung",
+    applyUrl: "https://www.huk.de/gesundheit-vorsorge-vermoegen/krankenversicherung/auslandskrankenversicherung.html",
   },
 };
 
