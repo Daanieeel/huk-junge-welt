@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { LogOut, RefreshCw, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { signOut } from "@/lib/auth-client";
 import { clearAllData } from "@/lib/db";
 import { useBedarfscheckStore } from "@/lib/bedarfscheck-store";
@@ -17,6 +18,7 @@ interface ProfileScreenProps {
 
 export function ProfileScreen({ user }: ProfileScreenProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { reset, prefillFromQuestionnaire } = useBedarfscheckStore();
   const regenerate = useRegenerateProposals();
   const { data: questionnaireData } = useQuestionnaireQuery();
@@ -24,6 +26,7 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
   async function handleSignOut() {
     await clearAllData();
     await signOut();
+    queryClient.clear();
     router.push("/sign-in");
     router.refresh();
   }
