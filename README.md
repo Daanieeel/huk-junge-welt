@@ -1,159 +1,169 @@
-# Turborepo starter
+# HUK-COBURG Junge Welt
 
-This Turborepo starter is maintained by the Turborepo core team.
+Eine mobile-first Web-App, die jungen Menschen personalisierte Versicherungsempfehlungen von HUK-COBURG gibt — basierend auf ihrem Lebensstil, ihren Zielen und bestehenden Verträgen.
 
-## Using this example
+> Entstanden im Rahmen eines 2-tägigen Hackathons.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## Inhaltsverzeichnis
+
+- [Was ist das?](#was-ist-das)
+- [Architektur](#architektur)
+- [Voraussetzungen](#voraussetzungen)
+- [Setup](#setup)
+  - [1. Dependencies installieren](#1-dependencies-installieren)
+  - [2. Umgebungsvariablen anlegen](#2-umgebungsvariablen-anlegen)
+  - [3. Infrastruktur starten](#3-infrastruktur-starten)
+  - [4. MinIO Bucket anlegen](#4-minio-bucket-anlegen)
+  - [5. Datenbank initialisieren](#5-datenbank-initialisieren)
+  - [6. Entwicklungsserver starten](#6-entwicklungsserver-starten)
+- [Nützliche Befehle](#nützliche-befehle)
+- [Projektstruktur (Web-App)](#projektstruktur-web-app)
+
+---
+
+## Was ist das?
+
+Die App führt Nutzer durch einen kurzen Bedarfscheck (Alter, Beruf, Wohnsituation, Fahrzeuge, Familie, Versicherungsziel) und generiert daraus KI-gestützte, personalisierte Versicherungsempfehlungen. Bestehende Verträge können hochgeladen und direkt mit HUK-COBURG-Tarifen verglichen werden.
+
+**Kernfunktionen:**
+- Bedarfscheck-Onboarding mit automatischer Vorausfüllung bei erneutem Aufruf
+- KI-Empfehlungen via RAG-Webhook (n8n + LLM), priorisiert nach Wichtigkeit
+- Wechselempfehlungen mit konkreter Ersparnis-Anzeige
+- Echtzeit-Updates über WebSocket sobald neue Empfehlungen vorliegen
+- Dokument-Upload für bestehende Policen (PDF/Bild)
+- Qualitätsscore für den eigenen Versicherungsschutz
+
+---
+
+## Architektur
+
+```
+apps/
+  web/          Next.js 16 — Frontend (React 19, Tailwind v4)
+  rest/         Elysia REST API — Port 3001
+  websocket/    Elysia WebSocket Server — Port 3002
+  worker/       BullMQ Worker — verarbeitet KI-Jobs
+
+packages/
+  database/     Prisma v7 + PostgreSQL
+  auth/         Better Auth 1.5.3
+  message-queue/ BullMQ Producer/Consumer
+  pub-sub/      Redis Pub/Sub
+  env/          Zod-validierte Umgebungsvariablen
 ```
 
-## What's inside?
+**Infrastruktur:** PostgreSQL · Redis · MinIO (S3-kompatibler Datei-Storage)
 
-This Turborepo includes the following packages/apps:
+---
 
-### Apps and Packages
+## Voraussetzungen
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- [Bun](https://bun.sh) >= 1.3.6
+- [Docker](https://www.docker.com) + Docker Compose
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+---
 
-### Utilities
+## Setup
 
-This Turborepo has some additional tools already setup for you:
+### 1. Dependencies installieren
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+bun install
 ```
 
-Without global `turbo`, use your package manager:
+### 2. Umgebungsvariablen anlegen
 
-```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+cp .env.example .env
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Folgende Variablen müssen zusätzlich gesetzt werden (nicht im `.env.example` enthalten):
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+```env
+# Better Auth
+BETTER_AUTH_SECRET="<min. 32 Zeichen langer zufälliger String>"
+BETTER_AUTH_URL="http://localhost:3001"
+WEB_URL="http://localhost:3000"
 
-```sh
-turbo build --filter=docs
+# Frontend
+NEXT_PUBLIC_REST_URL="http://localhost:3001"
+NEXT_PUBLIC_WEBSOCKET_URL="ws://localhost:3002"
+
+# RAG-Webhook (n8n oder kompatibler Endpunkt)
+RAG_WEBHOOK_URL="<webhook-url>"
+RAG_WEBHOOK_AUTH="<base64-encoded-credentials>"  # optional
 ```
 
-Without global `turbo`:
+### 3. Infrastruktur starten
 
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+Startet PostgreSQL, Redis und MinIO per Docker Compose und führt die Datenbankmigrationen automatisch aus:
+
+```bash
+docker compose up -d
 ```
 
-### Develop
+### 4. MinIO Bucket anlegen
 
-To develop all apps and packages, run the following command:
+Einmalig nach dem ersten Start:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+1. MinIO Console öffnen: http://localhost:9001 (Login: `minioadmin` / `minioadmin`)
+2. Bucket `huk-documents` anlegen
+3. Bucket-Zugriff auf **Public** setzen (oder entsprechende Policy konfigurieren)
 
-```sh
-cd my-turborepo
-turbo dev
+### 5. Datenbank initialisieren
+
+```bash
+bun run db:push
 ```
 
-Without global `turbo`, use your package manager:
+### 6. Entwicklungsserver starten
 
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+Startet alle Apps gleichzeitig via Turborepo:
+
+```bash
+bun run dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+| App        | URL                     |
+|------------|-------------------------|
+| Frontend   | http://localhost:3000   |
+| REST API   | http://localhost:3001   |
+| WebSocket  | ws://localhost:3002     |
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+---
 
-```sh
-turbo dev --filter=web
+## Nützliche Befehle
+
+```bash
+# Datenbankschema pushen (nach Schemaänderungen)
+bun run db:push
+
+# Prisma Client neu generieren
+bun run db:generate
+
+# Prisma Studio (Datenbank-UI)
+bun run db:studio
+
+# Nur eine App starten
+bun run dev --filter=web
+bun run dev --filter=rest
+bun run dev --filter=worker
 ```
 
-Without global `turbo`:
+---
 
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+## Projektstruktur (Web-App)
+
 ```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
+apps/web/
+  app/              Next.js App Router (Seiten & Layouts)
+  components/       UI-Komponenten (nach Feature gruppiert)
+  lib/
+    api-client.ts   Typen & API-Wrapper
+    queries.ts      TanStack Query Hooks
+    ws-provider.tsx WebSocket-Client (Echtzeit-Updates)
+    db.ts           Dexie/IndexedDB (lokaler Cache)
+    bedarfscheck-store.ts  Zustand Store für Onboarding
 ```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
