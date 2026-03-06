@@ -8,18 +8,20 @@ Eine mobile-first Web-App, die jungen Menschen personalisierte Versicherungsempf
 
 ## Inhaltsverzeichnis
 
-- [Was ist das?](#was-ist-das)
-- [Architektur](#architektur)
-- [Voraussetzungen](#voraussetzungen)
-- [Setup](#setup)
-  - [1. Dependencies installieren](#1-dependencies-installieren)
-  - [2. Umgebungsvariablen anlegen](#2-umgebungsvariablen-anlegen)
-  - [3. Infrastruktur starten](#3-infrastruktur-starten)
-  - [4. MinIO Bucket anlegen](#4-minio-bucket-anlegen)
-  - [5. Datenbank initialisieren](#5-datenbank-initialisieren)
-  - [6. Entwicklungsserver starten](#6-entwicklungsserver-starten)
-- [Nützliche Befehle](#nützliche-befehle)
-- [Projektstruktur (Web-App)](#projektstruktur-web-app)
+- [HUK-COBURG Junge Welt](#huk-coburg-junge-welt)
+  - [Inhaltsverzeichnis](#inhaltsverzeichnis)
+  - [Was ist das?](#was-ist-das)
+  - [Architektur](#architektur)
+  - [Voraussetzungen](#voraussetzungen)
+  - [Setup](#setup)
+    - [1. Dependencies installieren](#1-dependencies-installieren)
+    - [2. Umgebungsvariablen anlegen](#2-umgebungsvariablen-anlegen)
+    - [3. Infrastruktur starten](#3-infrastruktur-starten)
+    - [4. MinIO Bucket anlegen](#4-minio-bucket-anlegen)
+    - [5. Datenbank initialisieren](#5-datenbank-initialisieren)
+    - [6. Entwicklungsserver starten](#6-entwicklungsserver-starten)
+  - [Nützliche Befehle](#nützliche-befehle)
+  - [Projektstruktur (Web-App)](#projektstruktur-web-app)
 
 ---
 
@@ -115,7 +117,7 @@ Einmalig nach dem ersten Start:
 ### 5. Datenbank initialisieren
 
 ```bash
-bun run db:push
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/huk_db?schema=public" bun run db:push
 ```
 
 ### 6. Entwicklungsserver starten
