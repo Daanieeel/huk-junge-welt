@@ -12,7 +12,9 @@
     "WEB_URL",
     "REST_PORT",
     "WEBSOCKET_PORT",
-    "WEB_PORT"
+    "WEB_PORT",
+    "RAG_WEBHOOK_URL",
+    "RAG_WEBHOOK_AUTH"
   ],
   "globalPassThroughEnv": [
     "NEXT_PUBLIC_REST_URL",

@@ -243,7 +243,7 @@ export const InsuranceTypeLabels: Record<string, string> = {
   PFLEGE: "Pflegeversicherung",
   UNFALL: "Unfallversicherung",
   RECHTSSCHUTZ: "Rechtsschutz",
-  KRANKENZUSATZ: "Krankenzusatz",
+  AUSLANDS_KRANKEN: "Auslandskranken",
 };
 
 export const InsuranceTypeIcons: Record<string, string> = {
@@ -255,7 +255,7 @@ export const InsuranceTypeIcons: Record<string, string> = {
   PFLEGE: "🏥",
   UNFALL: "⚡",
   RECHTSSCHUTZ: "⚖️",
-  KRANKENZUSATZ: "💊",
+  AUSLANDS_KRANKEN: "✈️",
 };
 
 export const CoverageItemSchema = z.object({
@@ -291,6 +291,7 @@ export const DashboardSchema = z.object({
   totalRecommended: z.number(),
   totalCovered: z.number(),
   hasQuestionnaire: z.boolean(),
+  hasCompletedProposalJob: z.boolean(),
   items: z.array(CoverageItemSchema),
 });
 

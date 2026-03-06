@@ -27,6 +27,12 @@ Each response must strictly follow this structure:
       "action_suggestion": "string (A helpful next-step suggestion in German, e.g., 'Vergleiche jetzt deinen bestehenden KFZ-Tarif mit unserem Angebot.')"
     }
   ],
+  "skipped": [
+    {
+      "type": "string (MUST be a valid InsuranceType enum value)",
+      "reason": "string (brief explanation in English of why no recommendation could be made, e.g. 'No HUK-COBURG tariff data available for this type')"
+    }
+  ],
   "data_consistency_score": "float (0.0 - 1.0 based on how well the source material matches the user's needs)"
 }
 

@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useBedarfscheckStore,
-  TOTAL_STEPS,
-  type BedarfscheckStep,
-} from "@/lib/bedarfscheck-store";
+import { useBedarfscheckStore, TOTAL_STEPS, type BedarfscheckStep } from "@/lib/bedarfscheck-store";
 import { useSubmitQuestionnaire, usePutQuestionnaire } from "@/lib/queries";
 import { StepIndicator } from "./step-indicator";
 import { IntroScreen } from "./intro-screen";
@@ -25,7 +21,10 @@ interface BedarfscheckScreenProps {
   hasExistingQuestionnaire?: boolean;
 }
 
-export function BedarfscheckScreen({ userName, hasExistingQuestionnaire = false }: BedarfscheckScreenProps) {
+export function BedarfscheckScreen({
+  userName,
+  hasExistingQuestionnaire = false,
+}: BedarfscheckScreenProps) {
   const {
     step,
     completedSteps,
@@ -45,7 +44,7 @@ export function BedarfscheckScreen({ userName, hasExistingQuestionnaire = false 
 
   // ── Step completion handlers ───────────────────────────────────────────────
 
-  const handleStep1 = (data: { name: string; dateOfBirth: string }) => {
+  const handleStep1 = (data: { dateOfBirth: string }) => {
     updateFormData(data);
     markStepCompleted(1);
     goToStep(2);
@@ -93,11 +92,9 @@ export function BedarfscheckScreen({ userName, hasExistingQuestionnaire = false 
     const merged = { ...formData, ...data };
     updateFormData(data);
 
-    const salary =
-      merged.salary !== "" ? parseFloat(merged.salary) : null;
+    const salary = merged.salary !== "" ? Number.parseFloat(merged.salary) : null;
 
     await submitMutation.mutateAsync({
-      name: merged.name,
       dateOfBirth: merged.dateOfBirth,
       jobType: merged.jobType!,
       jobExpiryDate: merged.jobExpiryDate ?? null,
@@ -148,7 +145,6 @@ export function BedarfscheckScreen({ userName, hasExistingQuestionnaire = false 
       <div className="flex-1 min-h-0">
         {currentStep === 1 && (
           <StepPersonal
-            defaultName={formData.name}
             defaultDateOfBirth={formData.dateOfBirth}
             onComplete={handleStep1}
             onBack={goToPrevStep}

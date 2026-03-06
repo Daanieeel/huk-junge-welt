@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut, RefreshCw, User } from "lucide-react";
+import { LogOut, RefreshCw, Sparkles, User } from "lucide-react";
+import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { useBedarfscheckStore } from "@/lib/bedarfscheck-store";
+import { useRegenerateProposals } from "@/lib/queries";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ProfileScreenProps {
   user: { name: string | null; email: string };
@@ -14,6 +17,7 @@ interface ProfileScreenProps {
 export function ProfileScreen({ user }: ProfileScreenProps) {
   const router = useRouter();
   const reset = useBedarfscheckStore((s) => s.reset);
+  const regenerate = useRegenerateProposals();
 
   async function handleSignOut() {
     await signOut();
@@ -76,22 +80,51 @@ export function ProfileScreen({ user }: ProfileScreenProps) {
         </section>
 
         {/* Settings */}
-        <section>
+        <section className="flex flex-col gap-2">
           <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-muted-foreground mb-2 px-1">
             Einstellungen
           </p>
           <Button
-              onClick={handleResetBedarfscheck}
-              className="w-full flex items-center justify-start h-auto gap-3 px-4 py-3.5"
-              variant={'outline'}
-            >
-              <RefreshCw className="size-4 text-muted-foreground shrink-0" />
-              <div>
-                <p className="text-[13px] font-medium text-foreground">Bedarfscheck zurücksetzen</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Fragebogen erneut ausfüllen
-                </p>
-              </div>
-            </Button>
+            onClick={async () => {
+              try {
+                await regenerate.mutateAsync();
+                toast("Empfehlungen werden neu generiert", {
+                  description: "Wir analysieren dein Profil im Hintergrund.",
+                });
+                router.push("/");
+              } catch (err) {
+                toast.error("Fehler", {
+                  description: err instanceof Error ? err.message : "Unbekannter Fehler",
+                });
+              }
+            }}
+            disabled={regenerate.isPending}
+            className="w-full flex items-center justify-start h-auto gap-3 px-4 py-3.5"
+            variant="outline"
+          >
+            <Sparkles
+              className={cn('size-4 shrink-0', regenerate.isPending ? "animate-pulse" : "")}
+            />
+            <div>
+              <p className="text-[13px] font-medium text-foreground">
+                Empfehlungen neu generieren
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {regenerate.isPending ? "Wird gestartet…" : "KI-Analyse jetzt erneut starten"}
+              </p>
+            </div>
+          </Button>
+          <Button
+            onClick={handleResetBedarfscheck}
+            className="w-full flex items-center justify-start h-auto gap-3 px-4 py-3.5"
+            variant="outline"
+          >
+            <RefreshCw className="size-4 text-muted-foreground shrink-0" />
+            <div>
+              <p className="text-[13px] font-medium text-foreground">Bedarfscheck zurücksetzen</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Fragebogen erneut ausfüllen</p>
+            </div>
+          </Button>
         </section>
       </div>
     </div>

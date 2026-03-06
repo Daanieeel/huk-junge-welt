@@ -8,8 +8,6 @@ import { persist } from "zustand/middleware";
 // ============================================================================
 
 export type BedarfscheckFormData = {
-  // Step 1 – Persönliche Daten
-  name: string;
   dateOfBirth: string; // ISO date: "YYYY-MM-DD"
 
   // Step 2 – Beruf & Gehalt
@@ -42,7 +40,6 @@ export type BedarfscheckStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export const TOTAL_STEPS = 6;
 
 const INITIAL_FORM_DATA: BedarfscheckFormData = {
-  name: "",
   dateOfBirth: "",
   jobType: null,
   jobExpiryDate: null,

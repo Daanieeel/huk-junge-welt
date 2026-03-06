@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { CoverageItem } from "@/lib/api-client";
 import { InsuranceTypeLabels, InsuranceTypeIcons } from "@/lib/api-client";
+import { typeToSlug } from "@/lib/insurance-content";
 import { ProcessingState } from "./processing-state";
+import { NoDataState } from "./no-data-state";
 
 const INTERVAL_LABELS: Record<string, string> = {
   MONTHLY: "/ Monat",
@@ -16,9 +18,11 @@ interface CoverageListProps {
   hasQuestionnaire: boolean;
   /** When true, renders without the section wrapper (e.g. inside a full page) */
   standalone?: boolean;
+  /** When true, a completed job returned 0 proposals (RAG had no data) */
+  hasNoData?: boolean;
 }
 
-export function CoverageList({ items, hasQuestionnaire, standalone }: CoverageListProps) {
+export function CoverageList({ items, hasQuestionnaire, standalone, hasNoData }: CoverageListProps) {
   const proposals = items.filter((i) => i.proposal !== null);
 
   const content = (() => {
@@ -45,7 +49,12 @@ export function CoverageList({ items, hasQuestionnaire, standalone }: CoverageLi
       );
     }
 
-    // ── State 2: Processing ────────────────────────────────────────────────────
+    // ── State 2a: RAG had no data ──────────────────────────────────────────────
+    if (proposals.length === 0 && hasNoData) {
+      return <NoDataState />;
+    }
+
+    // ── State 2b: Job pending / processing ────────────────────────────────────
     if (proposals.length === 0) {
       return <ProcessingState />;
     }
@@ -58,9 +67,10 @@ export function CoverageList({ items, hasQuestionnaire, standalone }: CoverageLi
           const intervalLabel = INTERVAL_LABELS[proposal.interval] ?? "";
 
           return (
-            <div
+            <Link
               key={item.type}
-              className="bg-card rounded-2xl px-4 py-3.5 ring-1 ring-foreground/8 flex items-center justify-between"
+              href={`/vertragsempfehlungen/${typeToSlug(item.type)}`}
+              className="bg-card rounded-2xl px-4 py-3.5 ring-1 ring-foreground/8 flex items-center justify-between active:bg-muted transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="text-[20px] leading-none shrink-0">
@@ -80,13 +90,13 @@ export function CoverageList({ items, hasQuestionnaire, standalone }: CoverageLi
 
               <div className="flex flex-col items-end shrink-0 ml-3 gap-1">
                 <span className="text-[13px] font-bold text-foreground tabular-nums">
-                  {parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
+                  ~{Number.parseFloat(proposal.rate).toFixed(2).replace(".", ",")} €
                 </span>
                 <span className="text-[9px] text-muted-foreground whitespace-nowrap">
                   {intervalLabel}
                 </span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -103,6 +113,11 @@ export function CoverageList({ items, hasQuestionnaire, standalone }: CoverageLi
         {proposals.length > 0 ? "Deine Empfehlungen" : "Dein Überblick"}
       </p>
       {content}
+      {proposals.length > 0 && (
+        <p className="text-[11px] text-muted-foreground mt-4 px-1 leading-relaxed">
+          ~ Die angezeigten Beiträge sind KI-gestützte Schätzungen auf Basis deines Profils. Der tatsächliche Beitrag kann abweichen und wird beim Abschluss verbindlich berechnet.
+        </p>
+      )}
     </div>
   );
 }

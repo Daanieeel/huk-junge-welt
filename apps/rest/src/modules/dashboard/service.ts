@@ -64,7 +64,7 @@ export function deriveRecommendedTypes(questionnaire: Questionnaire | null): Ins
 
   const ageMs = Date.now() - new Date(questionnaire.dateOfBirth).getTime();
   const age = Math.floor(ageMs / (1000 * 60 * 60 * 24 * 365));
-  if (age >= 25) types.push(InsuranceType.KRANKENZUSATZ);
+  types.push(InsuranceType.AUSLANDS_KRANKEN);
 
   return [...new Set(types)];
 }
@@ -131,6 +131,8 @@ export function computeInsuranceScore(insurances: Insurance[], items: CoverageIt
   const covered = items.filter((i: CoverageItem) => i.status === "covered").length;
   const total = items.length;
   if (total === 0) return 0;
+
+  if (covered === 0) return 0;
 
   const coverageRatio = covered / total;
   const scored = insurances.filter((i: Insurance) => i.coverageScore !== null);

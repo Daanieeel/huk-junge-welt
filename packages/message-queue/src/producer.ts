@@ -113,6 +113,20 @@ export function createExternalApiJobProducer(redisUrl: string) {
         dbJobId,
         jobOptions: options,
       }),
+
+    addGenerateProposalsJob: (
+      payload: JobPayloadMap["generate-proposals"],
+      userId: string,
+      dbJobId?: string,
+      options?: JobsOptions
+    ) =>
+      addJob(QUEUE_NAMES.EXTERNAL_API, redisUrl, {
+        type: "generate-proposals",
+        payload,
+        userId,
+        dbJobId,
+        jobOptions: options,
+      }),
   };
 }
 

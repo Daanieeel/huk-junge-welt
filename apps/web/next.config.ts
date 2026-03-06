@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { hostname: "static.c.huk24.de" },
       { hostname: "upload.wikimedia.org" },
+      { hostname: "img.youtube.com" },
     ],
   },
 };

@@ -11,6 +11,8 @@ import { sync } from "./modules/sync";
 import { dashboard } from "./modules/dashboard";
 import { home } from "./modules/home";
 import { questionnaire } from "./modules/questionnaire";
+import { insurances } from "./modules/insurances";
+import { proposals } from "./modules/proposals";
 
 
 const app = new Elysia()
@@ -56,6 +58,8 @@ const app = new Elysia()
   .use(dashboard)
   .use(home)
   .use(questionnaire)
+  .use(insurances)
+  .use(proposals)
 
   .listen(env.REST_PORT);
 

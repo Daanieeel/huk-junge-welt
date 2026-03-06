@@ -19,6 +19,7 @@ export const JOB_TYPES = {
   // External API Jobs
   FETCH_DATA: "fetch-data",
   PROCESS_DATA: "process-data",
+  GENERATE_PROPOSALS: "generate-proposals",
 
   // Notification Jobs
   SEND_NOTIFICATION: "send-notification",
@@ -42,6 +43,12 @@ export interface ProcessDataPayload {
   data: unknown;
 }
 
+export interface GenerateProposalsPayload {
+  userId: string;
+  /** If set, only regenerate proposals for these specific insurance types. */
+  insuranceTypes?: string[];
+}
+
 export interface SendNotificationPayload {
   userId: string;
   type: "JOB_STARTED" | "JOB_PROGRESS" | "JOB_COMPLETED" | "JOB_FAILED" | "SYSTEM";
@@ -57,6 +64,7 @@ export interface SendNotificationPayload {
 export type JobPayloadMap = {
   [JOB_TYPES.FETCH_DATA]: FetchDataPayload;
   [JOB_TYPES.PROCESS_DATA]: ProcessDataPayload;
+  [JOB_TYPES.GENERATE_PROPOSALS]: GenerateProposalsPayload;
   [JOB_TYPES.SEND_NOTIFICATION]: SendNotificationPayload;
 };
 

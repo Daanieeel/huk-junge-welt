@@ -1,7 +1,4 @@
 "use client";
-
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { useDashboardQuery } from "@/lib/queries";
 import { CoverageList } from "@/components/home/coverage-list";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,9 +25,7 @@ export function ProposalsScreen() {
   if (isError || !data) {
     return (
       <div className="px-5 py-10 text-center">
-        <p className="text-sm text-muted-foreground">
-          Daten konnten nicht geladen werden.
-        </p>
+        <p className="text-sm text-muted-foreground">Daten konnten nicht geladen werden.</p>
       </div>
     );
   }
@@ -39,10 +34,8 @@ export function ProposalsScreen() {
 
   return (
     <div className="pb-10">
-      <div className="px-5 pt-4 pb-5">
-        <h2 className="text-[24px] font-bold text-foreground leading-tight mb-0.5">
-          Empfehlungen
-        </h2>
+      <div className="px-5 pt-4 mb-4">
+        <h2 className="text-[24px] font-bold text-foreground leading-tight mb-0.5">Empfehlungen</h2>
         <p className="text-[13px] text-muted-foreground">
           {data.hasQuestionnaire && proposals.length > 0
             ? `${proposals.length} personalisierte Versicherungsempfehlungen`
@@ -54,8 +47,19 @@ export function ProposalsScreen() {
         <CoverageList
           items={data.items}
           hasQuestionnaire={data.hasQuestionnaire}
+          hasNoData={
+            data.hasQuestionnaire &&
+            data.hasCompletedProposalJob &&
+            data.items.filter((i) => i.proposal !== null).length === 0
+          }
           standalone
         />
+        {proposals.length > 0 && (
+          <p className="text-[11px] text-muted-foreground mt-4 px-1 leading-relaxed">
+            ~ Die angezeigten Beiträge sind KI-gestützte Schätzungen auf Basis deines Profils. Der
+            tatsächliche Beitrag kann abweichen und wird beim Abschluss verbindlich berechnet.
+          </p>
+        )}
       </div>
     </div>
   );

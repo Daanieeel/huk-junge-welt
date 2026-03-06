@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { homeApi, questionnaireApi, dashboardApi } from "./api-client";
 import { api } from "./eden";
+import { useProposalsStore } from "./proposals-store";
 
 export const queryKeys = {
   home: ["home"] as const,
   dashboard: ["dashboard"] as const,
   questionnaire: ["questionnaire"] as const,
+  proposals: ["proposals"] as const,
+  insurances: ["insurances"] as const,
 } as const;
 
 export function useHomeQuery() {
@@ -41,6 +44,80 @@ function invalidateQuestionnaireQueries(queryClient: ReturnType<typeof useQueryC
   queryClient.invalidateQueries({ queryKey: queryKeys.questionnaire });
   queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
   queryClient.invalidateQueries({ queryKey: queryKeys.home });
+}
+
+// ============================================================================
+// Proposals
+// ============================================================================
+
+export function useProposalsQuery() {
+  return useQuery({
+    queryKey: queryKeys.proposals,
+    queryFn: async () => {
+      const { data, error } = await api.proposals.get();
+      if (error) throw new Error("Failed to load proposals");
+      return data ?? [];
+    },
+  });
+}
+
+// ============================================================================
+// Insurances
+// ============================================================================
+
+export function useInsurancesQuery() {
+  return useQuery({
+    queryKey: queryKeys.insurances,
+    queryFn: async () => {
+      const { data, error } = await api.insurances.get();
+      if (error) throw new Error("Failed to load insurances");
+      return data ?? [];
+    },
+  });
+}
+
+type InsuranceCreateBody = Parameters<typeof api.insurances.post>[0];
+
+export function useAddInsurance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: InsuranceCreateBody) => {
+      const { data, error } = await api.insurances.post(input);
+      if (error) {
+        const msg =
+          typeof error.value === "object" &&
+          error.value !== null &&
+          "error" in error.value
+            ? String((error.value as { error: unknown }).error)
+            : "Fehler beim Hinzufügen";
+        throw new Error(msg);
+      }
+      return data!;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.insurances });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+    },
+  });
+}
+
+export function useRegenerateProposals() {
+  const setRegenerating = useProposalsStore((s) => s.setRegenerating);
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await api.proposals.regenerate.post();
+      if (error) {
+        const msg =
+          typeof error.value === "object" &&
+          error.value !== null &&
+          "error" in error.value
+            ? String((error.value as { error: unknown }).error)
+            : "Fehler beim Starten der Generierung";
+        throw new Error(msg);
+      }
+    },
+    onSuccess: () => setRegenerating(true),
+  });
 }
 
 export function useSubmitQuestionnaire() {

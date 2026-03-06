@@ -20,7 +20,7 @@ enum InsuranceType {
   PFLEGE
   UNFALL
   RECHTSSCHUTZ
-  KRANKENZUSATZ
+  AUSLANDS_KRANKEN
 }
 
 enum PaymentInterval {
@@ -215,15 +215,17 @@ model Document {
 }
 
 model Proposal {
-  id            String          @id @default(cuid())
-  type          InsuranceType
-  company       String          
-  rate          Decimal         @db.Decimal(10, 2)
-  interval      PaymentInterval @default(MONTHLY)
-  templateId    String
-  isAiGenerated Boolean         @default(true)
-  priority      Int?            // 1 = highest priority, 5 = lowest
-  reason        String?         // Why this insurance is recommended
+  id              String          @id @default(cuid())
+  type            InsuranceType
+  company         String
+  rate            Decimal         @db.Decimal(10, 2)
+  interval        PaymentInterval @default(MONTHLY)
+  templateId      String
+  isAiGenerated   Boolean         @default(true)
+  priority        Int?            // 1 = highest priority, 5 = lowest
+  reason          String?         // Summary / why this is a good fit
+  keyBenefits     String[]        // Key benefits of this insurance
+  actionSuggestion String?        // Suggested next step for the user
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -236,7 +238,6 @@ model Proposal {
 
 model Questionnaire {
   id                   String                @id @default(cuid())
-  name                 String
   dateOfBirth          DateTime              @db.Date
   
   // Adresse (optional – collected in a later flow)

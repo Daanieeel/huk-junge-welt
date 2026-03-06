@@ -1,93 +1,88 @@
 "use client"
 
-import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts"
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
+// ─── geometry helpers ──────────────────────────────────────────────────────────
 
-const chartConfig = {
-  score: {
-    label: "Schutz",
-    color: "var(--primary)",
-  },
-  remainder: {
-    label: "Offen",
-    color: "var(--border)",
-  },
-} satisfies ChartConfig
+function polar(cx: number, cy: number, r: number, deg: number) {
+  const rad = (deg * Math.PI) / 180
+  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) }
+}
+
+/**
+ * SVG arc path along a circle from startDeg → endDeg.
+ * Going from 180° (left) → 0° (right) with sweep=1 traces the UPPER semicircle.
+ */
+function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
+  const s = polar(cx, cy, r, startDeg)
+  const e = polar(cx, cy, r, endDeg)
+  // sweep=1 (CW in screen coords) from a higher angle to a lower one goes through the top
+  const sweep = startDeg > endDeg ? 1 : 0
+  return `M ${s.x} ${s.y} A ${r} ${r} 0 0 ${sweep} ${e.x} ${e.y}`
+}
+
+// ─── constants ─────────────────────────────────────────────────────────────────
+
+const CX = 130
+const CY = 130
+const R  = 96   // shared midline radius for both arcs
+
+const BG_W    = 15  // thin background ring
+const SCORE_W = 30  // thick score arc
+
+// viewBox: top = CY − R − SCORE_W/2 − 2px padding, bottom = CY
+// → "0 12 260 118"
+const VIEW_BOX = "0 12 260 118"
+
+// ─── component ────────────────────────────────────────────────────────────────
 
 export function ScoreGauge({ score, isProcessing }: { score: number; isProcessing?: boolean }) {
+  const full  = arcPath(CX, CY, R, 180, 0)
+
   if (isProcessing) {
     return (
       <div className="mx-auto w-full max-w-[260px]">
-        {/*
-          viewBox crops to just the ring: x=0..260, y=18..130 (outer arc peak to center line).
-          Path uses sweep=1 for outer (CW → top) and sweep=0 for inner return (CCW → top).
-        */}
-        <svg viewBox="0 18 260 112" className="w-full">
-          <path
-            d="M 18,130 A 112,112 0 0 1 242,130 L 202,130 A 72,72 0 0 0 58,130 Z"
-            className="fill-muted animate-pulse"
-          />
+        <svg viewBox={VIEW_BOX} className="w-full overflow-visible">
+          <path d={full} fill="none" strokeWidth={BG_W}    className="stroke-muted" strokeLinecap="square" />
+          <path d={full} fill="none" strokeWidth={SCORE_W} className="stroke-muted animate-pulse" strokeLinecap="square" />
         </svg>
       </div>
     )
   }
 
-  const chartData = [{ score, remainder: 100 - score }]
+  // 0 → 100 maps to 180° → 0°
+  const endDeg   = 180 - Math.min(Math.max(score, 0), 100) * 1.8
+  const scorePth = score > 0 ? arcPath(CX, CY, R, 180, endDeg) : ""
 
   return (
-    <ChartContainer
-      id="score-gauge"
-      config={chartConfig}
-      className="mx-auto aspect-square w-full max-w-[260px]"
-    >
-      <RadialBarChart
-        data={chartData}
-        startAngle={180}
-        endAngle={0}
-        innerRadius={72}
-        outerRadius={112}
-      >
-        <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-          <Label
-            content={({ viewBox }) => {
-              if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                return (
-                  <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
-                    <tspan
-                      x={viewBox.cx}
-                      y={(viewBox.cy || 0) - 18}
-                      className="fill-foreground text-5xl font-bold"
-                    >
-                      {score}
-                    </tspan>
-                    <tspan
-                      x={viewBox.cx}
-                      y={(viewBox.cy || 0) + 4}
-                      className="fill-muted-foreground text-sm"
-                    >
-                      von 100
-                    </tspan>
-                  </text>
-                )
-              }
-            }}
+    <div className="mx-auto w-full max-w-[260px]">
+      <svg viewBox={VIEW_BOX} className="w-full overflow-visible">
+        {/* thin muted ring — full 180° */}
+        <path
+          d={full}
+          fill="none"
+          strokeWidth={BG_W}
+          className="stroke-muted"
+          strokeLinecap="square"
+        />
+
+        {/* thick primary arc — proportional to score */}
+        {scorePth && (
+          <path
+            d={scorePth}
+            fill="none"
+            strokeWidth={SCORE_W}
+            className="stroke-primary"
+            strokeLinecap="square"
           />
-        </PolarRadiusAxis>
-        <RadialBar
-          dataKey="score"
-          stackId="a"
-          cornerRadius={5}
-          fill="var(--color-score)"
-          className="stroke-transparent stroke-2"
-        />
-        <RadialBar
-          dataKey="remainder"
-          fill="var(--color-remainder)"
-          stackId="a"
-          cornerRadius={5}
-          className="stroke-transparent stroke-2"
-        />
-      </RadialBarChart>
-    </ChartContainer>
+        )}
+
+        {/* score label — sits inside the arc opening */}
+        <text x={CX} y={CY - 30} textAnchor="middle" className="fill-foreground font-bold" style={{ fontSize: 42, fontWeight: 700 }}>
+          {score}
+        </text>
+        <text x={CX} y={CY - 10} textAnchor="middle" className="fill-muted-foreground" style={{ fontSize: 13 }}>
+          von 100
+        </text>
+      </svg>
+    </div>
   )
 }

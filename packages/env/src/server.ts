@@ -27,6 +27,10 @@ export const serverEnvSchema = z.object({
   WEBSOCKET_PORT: z.coerce.number().default(3002),
   WEB_PORT: z.coerce.number().default(3000),
 
+  // RAG Webhook (only required by the worker process)
+  RAG_WEBHOOK_URL: z.string().url().optional(),
+  RAG_WEBHOOK_AUTH: z.string().optional(),
+
   // Node environment
   NODE_ENV: z
     .enum(["development", "production", "test"])

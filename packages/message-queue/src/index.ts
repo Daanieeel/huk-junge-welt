@@ -5,6 +5,7 @@ export {
   PUBSUB_CHANNELS,
   QUEUE_NAMES,
   type FetchDataPayload,
+  type GenerateProposalsPayload,
   type JobEvent,
   type JobPayloadMap,
   type JobResult,

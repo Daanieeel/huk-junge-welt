@@ -10,9 +10,9 @@ import {
 } from "@repo/database";
 import { betterAuthPlugin } from "../auth";
 import { QuestionnaireModel } from "./model";
+import { dispatchGenerateProposals } from "../../lib/producers";
 
 function buildFields(body: {
-  name: string;
   dateOfBirth: string;
   jobType: string;
   jobExpiryDate?: string | null;
@@ -29,7 +29,6 @@ function buildFields(body: {
   goal?: string | null;
 }) {
   return {
-    name: body.name,
     dateOfBirth: new Date(body.dateOfBirth),
     jobType: body.jobType as JobType,
     jobExpiryDate: body.jobExpiryDate ? new Date(body.jobExpiryDate) : null,
@@ -73,6 +72,12 @@ export const questionnaire = new Elysia({ prefix: "/questionnaire" })
         create: { userId: user.id, ...fields },
         update: fields,
       });
+
+      // Fire-and-forget: generate proposals for all recommended types
+      dispatchGenerateProposals({ userId: user.id }).catch((err) =>
+        console.error("Failed to dispatch generate-proposals:", err)
+      );
+
       return { data: result };
     },
     {
@@ -98,6 +103,12 @@ export const questionnaire = new Elysia({ prefix: "/questionnaire" })
         where: { userId: user.id },
         data: buildFields(body),
       });
+
+      // Re-generate all proposals since profile changed
+      dispatchGenerateProposals({ userId: user.id }).catch((err) =>
+        console.error("Failed to dispatch generate-proposals:", err)
+      );
+
       return { data: result };
     },
     {

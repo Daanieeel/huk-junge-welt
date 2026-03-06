@@ -78,6 +78,10 @@ export interface JobHandlers {
     { userId: string; jobId: string; data: unknown },
     JobResult
   >;
+  "generate-proposals": JobHandler<
+    { userId: string; insuranceTypes?: string[] },
+    JobResult
+  >;
   "send-notification": JobHandler<
     {
       userId: string;

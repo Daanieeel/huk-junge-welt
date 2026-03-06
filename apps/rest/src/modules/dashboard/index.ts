@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { prisma } from "@repo/database";
+import { prisma, JobStatus } from "@repo/database";
 import { betterAuthPlugin } from "../auth";
 import {
   deriveRecommendedTypes,
@@ -13,13 +13,22 @@ export const dashboard = new Elysia({ prefix: "/dashboard" })
   .get(
     "/",
     async ({ user }) => {
-      const [insurances, proposals, questionnaire] = await Promise.all([
+      const [insurances, proposals, questionnaire, lastProposalJob] = await Promise.all([
         prisma.insurance.findMany({ where: { userId: user.id } }),
         prisma.proposal.findMany({
           where: { userId: user.id },
           orderBy: [{ priority: "asc" }, { createdAt: "desc" }],
         }),
         prisma.questionnaire.findUnique({ where: { userId: user.id } }),
+        prisma.job.findFirst({
+          where: {
+            userId: user.id,
+            type: "generate-proposals",
+            status: { in: [JobStatus.COMPLETED, JobStatus.FAILED] },
+          },
+          orderBy: { completedAt: "desc" },
+          select: { status: true },
+        }),
       ]);
 
       const recommendedTypes = deriveRecommendedTypes(questionnaire);
@@ -35,6 +44,7 @@ export const dashboard = new Elysia({ prefix: "/dashboard" })
           totalRecommended: items.length,
           totalCovered: coveredCount,
           hasQuestionnaire: questionnaire !== null,
+          hasCompletedProposalJob: lastProposalJob !== null,
           items,
         },
       };

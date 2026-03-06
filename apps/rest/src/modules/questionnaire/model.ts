@@ -2,7 +2,6 @@ import { t } from "elysia";
 
 export const QuestionnaireModel = {
   body: t.Object({
-    name: t.String({ minLength: 1 }),
     dateOfBirth: t.String(),
     jobType: t.String(),
     jobExpiryDate: t.Optional(t.Nullable(t.String())),

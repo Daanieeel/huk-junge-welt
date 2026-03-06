@@ -28,7 +28,7 @@ export function ScoreSection({
 
       <ScoreGauge score={score} isProcessing={isProcessing} />
 
-      <div className="flex flex-col items-center text-center mb-4">
+      <div className="flex flex-col items-center text-center mb-4 mt-3">
         {isProcessing ? (
           <div className="flex items-center gap-1">
             <CpuIcon className="size-4" />
