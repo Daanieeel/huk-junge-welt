@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+function optionalEnvString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed || /^<.+>$/.test(trimmed)) {
+    return undefined;
+  }
+
+  return trimmed;
+}
+
 /**
  * Server-side environment variables schema
  * These are only available on the server
@@ -28,8 +39,11 @@ export const serverEnvSchema = z.object({
   WEB_PORT: z.coerce.number().default(3000),
 
   // RAG Webhook (only required by the worker process)
-  RAG_WEBHOOK_URL: z.string().url().optional(),
-  RAG_WEBHOOK_AUTH: z.string().optional(),
+  RAG_WEBHOOK_URL: z.preprocess(
+    optionalEnvString,
+    z.string().url().optional()
+  ),
+  RAG_WEBHOOK_AUTH: z.preprocess(optionalEnvString, z.string().optional()),
 
   // MinIO (S3-compatible object storage for insurance documents)
   MINIO_ENDPOINT: z.string().default("localhost"),

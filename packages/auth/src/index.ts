@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { prisma } from "@repo/database";
 
 // Env vars are read lazily at runtime (not import time) to support monorepo

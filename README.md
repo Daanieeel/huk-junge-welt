@@ -93,10 +93,12 @@ WEB_URL="http://localhost:3000"
 NEXT_PUBLIC_REST_URL="http://localhost:3001"
 NEXT_PUBLIC_WEBSOCKET_URL="ws://localhost:3002"
 
-# RAG-Webhook (n8n oder kompatibler Endpunkt)
+# RAG-Webhook (optional für lokalen Start, benötigt für KI-Empfehlungen)
 RAG_WEBHOOK_URL="<webhook-url>"
 RAG_WEBHOOK_AUTH="<base64-encoded-credentials>"  # optional
 ```
+
+`.env.example` enthält lauffähige Defaults für den lokalen Start. Ohne `RAG_WEBHOOK_URL` startet der Worker trotzdem, aber KI-Empfehlungen schlagen erst fehl, wenn ein entsprechender Job verarbeitet wird.
 
 ### 3. Infrastruktur starten
 

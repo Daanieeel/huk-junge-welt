@@ -13,6 +13,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@better-auth/prisma-adapter": "1.5.3",
     "@repo/database": "workspace:*",
     "@repo/env": "workspace:*",
     "better-auth": "^1.5.3"

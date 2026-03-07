@@ -580,6 +580,12 @@ const processor = createJobProcessor({
 
 console.log("🚀 Starting workers...");
 
+if (!env.RAG_WEBHOOK_URL) {
+  console.warn(
+    "⚠️  RAG_WEBHOOK_URL is not configured. Proposal generation jobs will fail until it is set."
+  );
+}
+
 createWorker({
   queueName: QUEUE_NAMES.EXTERNAL_API,
   redisUrl: env.BULLMQ_REDIS_URL,
