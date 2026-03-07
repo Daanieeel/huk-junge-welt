@@ -81,23 +81,6 @@ bun install
 cp .env.example .env
 ```
 
-Folgende Variablen müssen zusätzlich gesetzt werden (nicht im `.env.example` enthalten):
-
-```env
-# Better Auth
-BETTER_AUTH_SECRET="<min. 32 Zeichen langer zufälliger String>"
-BETTER_AUTH_URL="http://localhost:3001"
-WEB_URL="http://localhost:3000"
-
-# Frontend
-NEXT_PUBLIC_REST_URL="http://localhost:3001"
-NEXT_PUBLIC_WEBSOCKET_URL="ws://localhost:3002"
-
-# RAG-Webhook (optional für lokalen Start, benötigt für KI-Empfehlungen)
-RAG_WEBHOOK_URL="<webhook-url>"
-RAG_WEBHOOK_AUTH="<base64-encoded-credentials>"  # optional
-```
-
 `.env.example` enthält lauffähige Defaults für den lokalen Start. Ohne `RAG_WEBHOOK_URL` startet der Worker trotzdem, aber KI-Empfehlungen schlagen erst fehl, wenn ein entsprechender Job verarbeitet wird.
 
 ### 3. Infrastruktur starten
@@ -120,6 +103,7 @@ Einmalig nach dem ersten Start:
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/huk_db?schema=public" bun run db:push
+bun run db:generate
 ```
 
 ### 6. Entwicklungsserver starten
